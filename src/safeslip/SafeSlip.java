@@ -17,6 +17,7 @@ public class SafeSlip {
      */
     public static void main(String[] args) {
         // TODO code application logic here
+        //Teste envio do boleto
           System.out.println("===== SafeSlip - Envio de Boleto =====");
 
         EnvioBoleto envio = new EnvioBoleto();
