@@ -1,38 +1,29 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
 package safeslip;
-import extracao.EnvioBoleto;
-import java.io.File;
 
-/**
- *
- * @author DELL
- */
+import boleto.*;
+import boleto.extracao.ExtracaoBoleto;
+import java.io.File;
+import java.io.IOException;
+import usuario.Usuario;
+
 public class SafeSlip {
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-        // TODO code application logic here
-        //Teste envio do boleto
-        //teste
-          System.out.println("===== SafeSlip - Envio de Boleto =====");
+    public static void main(String[] args) throws IOException {
+        //TODO code application logic here
+        // Teste envio do boleto
+        // teste
+        System.out.println("===== SafeSlip - Envio de Boleto =====");
 
-        EnvioBoleto envio = new EnvioBoleto();
-        File boletoSelecionado = envio.selecionarArquivoPDF();
+        Usuario usuario = new Usuario();
+        usuario.enviarBoleto();
+        usuario.visualizarEConfirmarDadosPdf();
 
-        if (boletoSelecionado != null) {
-            System.out.println("Boleto enviado com sucesso:");
-            System.out.println("Nome do arquivo: " + boletoSelecionado.getName());
-            System.out.println("Caminho completo: " + boletoSelecionado.getAbsolutePath());
-        } else {
-            System.out.println("Nenhum boleto foi enviado.");
-        }
-
-        System.out.println("======================================");
+        System.out.println("======================================");;
+//        ExtracaoBoleto extracaoBoleto = new ExtracaoBoleto();
+//        extracaoBoleto.processarTxt();
     }
-    
+
 }
