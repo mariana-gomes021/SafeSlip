@@ -9,5 +9,12 @@ package usuario;
  * @author DELL
  */
 public class Boleto {
+
     //Representa o boleto extraído
+    private String valor;
+    private String vencimento;
+    private String cnpj;
+    private String nomeBeneficiario;
+    private String banco;
+    private String codigoBarras;
 }
