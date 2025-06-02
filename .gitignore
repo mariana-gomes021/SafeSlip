@@ -1,0 +1,11 @@
+build/
+nbproject/private/
+*.class
+*.log
+*.bak
+*.swp
+
+/src/lib/Tess4j/Tess4J/dist/
+/src/lib/Tess4j/Tess4J/nbproject/private/
+/src/lib/Tess4J/dist/
+/src/lib/Tess4J/nbproject/private/
