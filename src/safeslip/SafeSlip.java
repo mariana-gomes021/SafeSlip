@@ -1,9 +1,13 @@
 package safeslip;
 
+import bancodedados.ConexaoBD;
 import boleto.*;
 import boleto.extracao.ExtracaoBoleto;
 import java.io.File;
+import java.sql.*;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import usuario.Usuario;
 
 public class SafeSlip {
@@ -24,6 +28,15 @@ public class SafeSlip {
         System.out.println("======================================");;
 //        ExtracaoBoleto extracaoBoleto = new ExtracaoBoleto();
 //        extracaoBoleto.processarTxt();
+
+        try (Connection conexao = ConexaoBD.getConexao()) {
+            if (conexao != null) {
+                System.out.println("Conexão bem-sucedida!");
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro na conexão: " + e.getMessage());
+        }
+
     }
 
 }

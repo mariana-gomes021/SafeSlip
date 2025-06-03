@@ -12,11 +12,10 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author DELL
  */
 public class EnvioBoleto {
-
+    //Finalizado
     //Responsável pelo upload do PDF
     //Teste upload pdf
     private File arquivoPDF;
-
     public File selecionarArquivoPDF() {
         JFileChooser seletor = new JFileChooser();
         seletor.setDialogTitle("Selecione o boleto em PDF");
