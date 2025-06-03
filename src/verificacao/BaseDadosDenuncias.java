@@ -4,10 +4,40 @@
  */
 package verificacao;
 
+import bancodedados.ConexaoBD;
+import java.sql.*;
+
 /**
  *
  * @author DELL
  */
 public class BaseDadosDenuncias {
     //Consulta se o CNPJ já foi denunciado
+
+    private ConexaoBD conexao;
+
+    public BaseDadosDenuncias(ConexaoBD conexao) {
+        this.conexao = conexao;
+    }
+
+    public boolean cnpjDenunciado(String cnpj) {
+        String query = "SELECT COUNT(*) FROM denuncia d "
+                + "JOIN boleto b ON d.boleto_id = b.id "
+                + "WHERE b.cnpj_emitente = ?";
+
+        try (Connection conn = conexao.getConexao(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, cnpj);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    return count > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 }
