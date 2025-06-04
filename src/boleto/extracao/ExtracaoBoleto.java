@@ -1,5 +1,6 @@
 package boleto.extracao;
 
+import boleto.EnvioBoleto;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,54 +13,70 @@ import org.json.JSONObject;
 
 public class ExtracaoBoleto {
 
-    private String caminhoPdf = "src/img/teste3";
-    private File file = new File(caminhoPdf + ".pdf");
+    EnvioBoleto envioBoleto = new EnvioBoleto();
+    private File caminhoToArquivo = envioBoleto.selecionarArquivoPDF();
 
-    // ✅ Método 1: Transforma PDF em .txt
     public String transformarPdfToTxt() throws IOException {
-        PDDocument document = Loader.loadPDF(file);
-        PDFTextStripper pdfStripper = new PDFTextStripper();
-        String text = pdfStripper.getText(document);
-        document.close();
+        String caminhoSemExtensao = caminhoToArquivo.getAbsolutePath().replaceFirst("\\.pdf$", "");
+        File fileTxt = new File(caminhoSemExtensao + ".txt");
 
-        FileWriter writer = new FileWriter(caminhoPdf + ".txt");
-        writer.write(text);
-        writer.close();
+        if (!fileTxt.exists()) {
+            PDDocument document = Loader.loadPDF(caminhoToArquivo);
+            PDFTextStripper pdfStripper = new PDFTextStripper();
+            String text = pdfStripper.getText(document);
+            document.close();
 
-        System.out.println("Texto extraído e salvo com sucesso em '" + caminhoPdf + ".txt'.");
-        //System.out.println(text);
-        return text;
+            FileWriter writer = new FileWriter(fileTxt);
+            writer.write(text);
+            writer.close();
+
+            System.out.println("Texto extraído e salvo com sucesso em '" + fileTxt.getAbsolutePath() + "'.");
+            return text;
+        }
+
+        System.out.println("Texto ja extraido e salvo em '" + fileTxt.getAbsolutePath() + "'.");
+        return null;
     }
 
-    // ✅ Método 2: Processa o .txt gerado e extrai os campos
     public String processarTxt() throws IOException {
-        String pdfToTxt = transformarPdfToTxt();
-        String texto = pdfToTxt.replaceAll("\\s+", " ").trim();
-
-        System.out.println("===================================");
-
-        System.out.println("\nExtraindo informacoes do boleto:\n");
-
+        String texto = transformarPdfToTxt();
         JSONObject resultado = new JSONObject();
+        if (texto != null) {
 
-        resultado.put("Valor", extrairCampo("Valor", texto, Pattern.compile("(=)?\\s*VALOR\\s*COBRADO\\s*[:,]?\\s*([\\d.,-]+)")));
-        resultado.put("Data de Vencimento", extrairCampo("Data de Vencimento", texto, Pattern.compile("VENCIMENTO[:\\s]*([\\d]{2}/[\\d]{2}/[\\d]{4})")));
-        resultado.put("CNPJ do Beneficiario", extrairCampo("CNPJ do Beneficiario", texto, Pattern.compile("(CNPJ(:|\\s))?\\s*([\\d]{14}|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2})")));
-        resultado.put("Nome do Beneficiario", extrairCampo("Nome do Beneficiario", texto, Pattern.compile("(ISCP\\s*-?\\s*.*?\\s*LTDA)", Pattern.CASE_INSENSITIVE)));
-        resultado.put("Banco Emissor", extrairCampo("Banco Emissor", texto, Pattern.compile("Banco\\s+do\\s+Brasil", Pattern.CASE_INSENSITIVE)));
-        resultado.put("Codigo de Barras", extrairCampo("Codigo de Barras", texto, Pattern.compile("\\d{5}\\.\\d{5}\\s\\d{5}\\.\\d{6}\\s\\d{5}\\.\\d{6}\\s\\d\\s\\d{14}")));
+            if (texto.trim().startsWith("BENEFICI")) {
+                System.out.println("===================================");
+                System.out.println("\nExtraindo informações do boleto:\n");
 
-        System.out.println("Valor: " + resultado.optString("Valor", "Não encontrado"));
-        System.out.println("Data de Vencimento: " + resultado.optString("Data de Vencimento", "Não encontrado"));
-        System.out.println("CNPJ do Beneficiário: " + resultado.optString("CNPJ do Beneficiario", "Não encontrado"));
-        System.out.println("Nome do Beneficiário: " + resultado.optString("Nome do Beneficiario", "Não encontrado"));
-        System.out.println("Banco Emissor: " + resultado.optString("Banco Emissor", "Não encontrado"));
-        System.out.println("Codigo de Barras: " + resultado.optString("Codigo de Barras", "Não encontrado"));
-        return resultado.toString(4);
+                resultado.put("Valor", extrairCampoCecredEBradesco("Valor", texto, Pattern.compile("Valor (Cobrado|do Documento)[\\s:]*R?\\$?\\s*([\\d.,]+)")));
+                resultado.put("Data de Vencimento", extrairCampoCecredEBradesco("Data de Vencimento", texto, Pattern.compile("Data de Vencimento\\s*([\\d]{2}/[\\d]{2}/[\\d]{4})")));
+                resultado.put("CNPJ do Beneficiário", extrairCampoCecredEBradesco("CNPJ do Beneficiário", texto, Pattern.compile("CNPJ[:\\s]*([\\d]{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2})")));
+                resultado.put("Nome do Beneficiário", extrairCampoCecredEBradesco("Nome do Beneficiário", texto, Pattern.compile("BENEFICIÁRIO:\\s*([A-Z\\sÇÃÉÍÓÊÂÔÛÜ]+ LTDA)")));
+                resultado.put("Banco Emissor", extrairBancoEmissorCecredEBradesco(texto));
+                resultado.put("Numero do codigo de barras", extrairCampoCecredEBradesco("Numero do codigo de barras", texto, Pattern.compile("\\d{5}\\.\\d{5}\\s\\d{5}\\.\\d{6}\\s\\d{5}\\.\\d{6}\\s\\d\\s\\d{14}")));
+
+                return resultado.toString(1);
+            }
+
+            if (texto.trim().startsWith("ISCP")) {
+                System.out.println("===================================");
+                System.out.println("\nExtraindo informações do boleto:\n");
+                resultado.put("Valor", extrairCampoAnhembi("Valor", texto, Pattern.compile("(=)?\\s*VALOR\\s*COBRADO\\s*[:,]?\\s*([\\d.,-]+)")));
+                resultado.put("Data de Vencimento", extrairCampoAnhembi("Data de Vencimento", texto, Pattern.compile("VENCIMENTO[:\\s]*([\\d]{2}/[\\d]{2}/[\\d]{4})")));
+                resultado.put("CNPJ do Beneficiario", extrairCampoAnhembi("CNPJ do Beneficiario", texto, Pattern.compile("(CNPJ(:|\\s))?\\s*([\\d]{14}|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2})")));
+                resultado.put("Nome do Beneficiario", extrairCampoAnhembi("Nome do Beneficiario", texto, Pattern.compile("(ISCP\\s*-?\\s*.*?\\s*LTDA)", Pattern.CASE_INSENSITIVE)));
+                resultado.put("Banco Emissor", extrairCampoAnhembi("Banco Emissor", texto, Pattern.compile("Banco\\s+do\\s+Brasil", Pattern.CASE_INSENSITIVE)));
+                resultado.put("Numero do codigo de barras", extrairCampoAnhembi("Numero do codigo de barras", texto, Pattern.compile("\\b\\d{3}-\\d\\s\\d{5}\\.\\d{5}\\b")));
+
+                return resultado.toString(1);
+            }
+
+        }
+
+        return null;
+
     }
 
-    // ✅ Método auxiliar de extração que retorna o valor
-    private String extrairCampo(String nomeCampo, String texto, Pattern padrao) {
+    private String extrairCampoAnhembi(String nomeCampo, String texto, Pattern padrao) {
         Matcher matcher = padrao.matcher(texto);
         if (matcher.find()) {
             String resultado;
@@ -81,4 +98,47 @@ public class ExtracaoBoleto {
             return null;
         }
     }
+
+    private String extrairCampoCecredEBradesco(String nomeCampo, String texto, Pattern padrao) {
+        if (texto == null) {
+            System.out.println(nomeCampo + ": Texto de entrada é null.");
+            return null;
+        }
+
+        Matcher matcher = padrao.matcher(texto);
+        if (matcher.find()) {
+            String resultado;
+            int groupCount = matcher.groupCount();
+
+            if ((nomeCampo.equals("Valor") || nomeCampo.equals("Data de Vencimento")) && groupCount >= 1) {
+                resultado = matcher.group(groupCount);
+            } else if (groupCount >= 1) {
+                resultado = matcher.group(1);
+            } else {
+                resultado = matcher.group(0);
+            }
+
+            System.out.println(nomeCampo + ": " + resultado);
+            return resultado;
+        } else {
+            System.out.println(nomeCampo + ": Não encontrado.");
+            return null;
+        }
+    }
+
+    private String extrairBancoEmissorCecredEBradesco(String texto) {
+        String banco;
+        String bancoEmissor = "Banco Emissor: ";
+
+        if (texto.toUpperCase().contains("SISTEMA AILOS")) {
+            banco = "Sistema Ailos (Cooperativa)";
+            System.out.println(bancoEmissor + banco);
+            return banco;
+        } else {
+            banco = "Bradesco";
+            System.out.println(bancoEmissor + banco);
+            return banco;
+        }
+    }
+
 }

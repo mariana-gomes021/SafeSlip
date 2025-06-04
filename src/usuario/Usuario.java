@@ -41,24 +41,32 @@ public class Usuario {
     }
 
     public String visualizarEConfirmarDadosPdf() throws IOException {
-        extracaoBoleto.processarTxt();
-        System.out.println("===================================");
-        System.out.println("As informações do boleto estao corretas? (sim/nao)");
+        String processarTxt = extracaoBoleto.processarTxt();
+
+        if (processarTxt == null) {
+            return null;
+        }
+
+        System.out.println("==================================");
+        System.out.println("As informacoes do boleto estao corretas? (sim/nao)");
         String simOuNao;
         Scanner scan = new Scanner(System.in);
         simOuNao = scan.nextLine();
 
-        if (simOuNao.equals("nao") ) {
-            System.out.println("nao sei o que escrever!!");
-            return null;
-        }
-        if (simOuNao.equals("sim")) {
-            System.out.println("Certo iremos analisar o seu boleto!");
+        if(simOuNao.equals("nao")){
+             System.out.println("ok");
             return "";
-        } else {
-            System.out.println("sei la");
-            return null;
         }
+        if(simOuNao.equals("sim")){
+            System.out.println("iremos analisar");
+            return "";
+        }
+        
+        return null;
+    }
+
+    public String denunciarSimOuNao() {
+        return "";
     }
 
     public String getNome() {

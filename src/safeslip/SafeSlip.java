@@ -29,13 +29,13 @@ public class SafeSlip {
 //        ExtracaoBoleto extracaoBoleto = new ExtracaoBoleto();
 //        extracaoBoleto.processarTxt();
 
-        try (Connection conexao = ConexaoBD.getConexao()) {
-            if (conexao != null) {
-                System.out.println("Conexão bem-sucedida!");
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro na conexão: " + e.getMessage());
-        }
+//        try (Connection conexao = ConexaoBD.getConexao()) {
+//            if (conexao != null) {
+//                System.out.println("Conexão bem-sucedida!");
+//            }
+//        } catch (SQLException e) {
+//            System.err.println("Erro na conexão: " + e.getMessage());
+//        }
 
     }
 
