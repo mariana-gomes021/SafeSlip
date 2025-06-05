@@ -1,0 +1,62 @@
+BENEFICIÁRIO:
+EMPRESA FICTÍCIA LTDA (CNPJ: 43.576.788/0001-91)
+Rua da Consolação, 1500, Consolação
+São Paulo/SP — 01.301-100
+RECIBO DO PAGADOR
+Pagador
+JOSÉ BONIFÁCIO DE ANDRADA (CPF: 722.857.325-03)
+Data de Vencimento
+15/08/2018
+Valor Cobrado
+Carteira
+09
+Espécie Doc.
+DM
+Nº do Documento
+00001001
+Valor do Documento
+R$ 210,15
+Data Processamento
+14/07/2017
+Agência / Código do Beneficiário
+0101-5/03264467-0
+Nosso Número
+00115290000000004
+Autenticação Mecânica
+085-1 08591.23457 60011.529009 00000.004093 5 76170000021015
+É)\Z^g!!6"T8N]"0>!!!!%*Ê
+Local do Pagamento
+PAGAVEL PREFERENCIALMENTE NAS COOPERATIVAS DO SISTEMA AILOS.
+APOS VENCIMENTO PAGAR SOMENTE NA COOPERATIVA 
+Vencimento
+15/08/2018
+Beneficiário
+EMPRESA FICTÍCIA LTDA (CNPJ: 43.576.788/0001-91)
+Agência / Código do Beneficiário
+0101-5/03264467-0
+Data Documento
+14/07/2017 1001
+Nº do Documento Espécie Doc.
+DM
+Aceite
+N 14/07/2017
+Data Processamento Nosso Número
+00115290000000004
+Uso do Banco CIP Carteira
+09 R$
+Moeda Quantidade x Valor (=) Valor do Documento
+R$ 210,15
+Instruções (texto de responsabilidade do beneficiário)
+Após o vencimento Mora dia R$ 1,59
+Após o vencimento, multa de 2%
+Pagador
+JOSÉ BONIFÁCIO DE ANDRADA (CPF: 722.857.325-03)
+Rua Pedro Lessa, 15, Centro
+Rio de Janeiro/RJ — 20.030-030
+Código de Baixa
+Autenticação Mecânica FICHA DE COMPENSAÇÃO
+(-) Desconto / Abatimento
+(-) Outras Deduções
+(+) Moras / Multa
+(+) Outros Acréscimos
+(=) Valor Cobrado
