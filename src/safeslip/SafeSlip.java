@@ -1,42 +1,36 @@
-package safeslip;
+package safeslip; 
 
-import bancodedados.ConexaoBD;
-import boleto.*;
-import boleto.extracao.ExtracaoBoleto;
-import java.io.File;
-import java.sql.*;
+import boleto.ProcessadorBoleto;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.SQLException;
-import usuario.Usuario;
+import java.util.Scanner;
 
-public class SafeSlip {
+public class SafeSlip { 
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) throws IOException {
-        //TODO code application logic here
-        // Teste envio do boleto
-        // teste
-        System.out.println("===== SafeSlip - Envio de Boleto =====");
+    public static void main(String[] args) {
+        long startTime = System.currentTimeMillis();
+        Scanner scanner = new Scanner(System.in); // Cria o Scanner uma vez
 
-        Usuario usuario = new Usuario();
-        usuario.enviarBoleto();
-        usuario.visualizarEConfirmarDadosPdf();
+        try {
+            // Instancia o processador de boleto, passando o scanner
+            ProcessadorBoleto processador = new ProcessadorBoleto(scanner);
+            
+            // Chama o método que contém toda a lógica
+            processador.processarNovoBoleto();
 
-        System.out.println("======================================");;
-//        ExtracaoBoleto extracaoBoleto = new ExtracaoBoleto();
-//        extracaoBoleto.processarTxt();
-
-//        try (Connection conexao = ConexaoBD.getConexao()) {
-//            if (conexao != null) {
-//                System.out.println("Conexão bem-sucedida!");
-//            }
-//        } catch (SQLException e) {
-//            System.err.println("Erro na conexão: " + e.getMessage());
-//        }
-
+        } catch (IOException e) {
+            System.err.println("🚨 Erro de E/S: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("🚨 Erro ao interagir com o banco de dados: " + e.getMessage());
+            e.printStackTrace(); // Para depuração
+        } finally {
+            if (scanner != null) {
+                scanner.close(); // Fecha o scanner no final
+            }
+            long endTime = System.currentTimeMillis();
+            long totalTimeSeconds = (endTime - startTime) / 1000;
+            System.out.println("\n--- Construção concluída ---");
+            System.out.println("Total de tempo: " + totalTimeSeconds + " segundos");
+        }
     }
-
 }
