@@ -14,6 +14,8 @@ public class RepositorioBoleto {
         String insertSql = "INSERT INTO boleto (valor, vencimento, cnpj_emitente, nome_beneficiario, " +
                            "banco_emissor, codigo_barras, data_extracao, status_validacao, usuario_id) " +
                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        String updateStatusSql = "UPDATE boleto SET status_validacao = ? WHERE codigo_barras = ?"; // Para atualizar status de boletos existentes
 
         try (Connection conexao = ConexaoBD.getConexao()) {
             // Primeiro, verifica se o boleto já existe
@@ -26,7 +28,18 @@ public class RepositorioBoleto {
                     String statusExistente = rs.getString("status_validacao");
                     System.out.println("⚠️ Boleto com código de barras '" + boleto.getCodigoBarras() + "' já existe no banco de dados.");
                     System.out.println("   Status de validação atual: '" + statusExistente + "'.");
-                    return true; 
+                    
+                    // Opcional: Se o boleto já existe, e o novo status de validação é diferente do existente, você pode atualizá-lo.
+                    // Isso é útil se você quiser que uma re-validação sobrescreva o status anterior.
+                    if (!statusExistente.equals(boleto.getStatusValidacao())) {
+                        System.out.println("   Atualizando status de validação para: '" + boleto.getStatusValidacao() + "'.");
+                        try (PreparedStatement updateStmt = conexao.prepareStatement(updateStatusSql)) {
+                            updateStmt.setString(1, boleto.getStatusValidacao());
+                            updateStmt.setString(2, boleto.getCodigoBarras());
+                            updateStmt.executeUpdate();
+                        }
+                    }
+                    return true; // Considera como "sucesso" porque o objetivo de estar no banco foi atingido
                 }
             }
 
@@ -43,8 +56,7 @@ public class RepositorioBoleto {
                 insertStmt.setString(5, boleto.getBancoEmissor());
                 insertStmt.setString(6, boleto.getCodigoBarras());
                 insertStmt.setDate(7, sqlDataExtracao);
-                // --- AQUI É A MUDANÇA ---
-                insertStmt.setString(8, "PENDENTE"); // Usando 'PENDENTE' conforme seu ENUM SQL
+                insertStmt.setString(8, boleto.getStatusValidacao() != null ? boleto.getStatusValidacao() : "PENDENTE"); // Usa o status do boleto, ou 'PENDENTE' como fallback
                 
                 if (boleto.getUsuarioId() > 0) {
                     insertStmt.setInt(9, boleto.getUsuarioId());

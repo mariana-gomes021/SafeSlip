@@ -12,12 +12,13 @@ public class Boleto {
     private BigDecimal valor;
     private LocalDate vencimento;
     private LocalDateTime dataExtracao;
-    private String statusValidacao;
+    private String statusValidacao; // Mantido para o status da validação do CNPJ
+    private String statusValidacaoBanco; // Novo campo para o status da validação do Banco
     private String nomeBeneficiario;
     private String bancoEmissor;
     private boolean denunciado;
     private String nomeCnpjReceita;
-    private int usuarioId; // Adicionar este campo se você adicionou a coluna no DB
+    private int usuarioId;
 
     // Getters e Setters
     public int getId() {
@@ -108,12 +109,20 @@ public class Boleto {
         this.nomeCnpjReceita = nomeCnpjReceita;
     }
 
-    // Novo getter e setter para usuarioId
     public int getUsuarioId() {
         return usuarioId;
     }
 
     public void setUsuarioId(int usuarioId) {
         this.usuarioId = usuarioId;
+    }
+
+    // Novo getter e setter para statusValidacaoBanco
+    public String getStatusValidacaoBanco() {
+        return statusValidacaoBanco;
+    }
+
+    public void setStatusValidacaoBanco(String statusValidacaoBanco) {
+        this.statusValidacaoBanco = statusValidacaoBanco;
     }
 }

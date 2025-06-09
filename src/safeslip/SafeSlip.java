@@ -1,43 +1,30 @@
-package safeslip; 
+package safeslip;
 
-import boleto.ProcessadorBoleto;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Scanner;
-import usuario.Boleto;
-import verificacao.ConsultaCNPJ;
+import boleto.ProcessadorBoleto;
 
-public class SafeSlip { 
+public class SafeSlip {
 
     public static void main(String[] args) {
-        long startTime = System.currentTimeMillis();
-        Scanner scanner = new Scanner(System.in); // Cria o Scanner uma vez
+        Scanner scanner = new Scanner(System.in); // Cria o scanner para leitura de entrada
+        ProcessadorBoleto processador = new ProcessadorBoleto(scanner); // Instancia o processador de boleto
 
-//        try {;
-//            // Instancia o processador de boleto, passando o scanner
-//            ProcessadorBoleto processador = new ProcessadorBoleto(scanner);
-//
-//            // Chama o método que contém toda a lógica
-//            processador.processarNovoBoleto();
-//
-//        } catch (IOException e) {
-//            System.err.println("🚨 Erro de E/S: " + e.getMessage());
-//        } catch (SQLException e) {
-//            System.err.println("🚨 Erro ao interagir com o banco de dados: " + e.getMessage());
-//            e.printStackTrace(); // Para depuração
-//        } finally {
-//            if (scanner != null) {
-//                scanner.close(); // Fecha o scanner no final
-//            }
-//            long endTime = System.currentTimeMillis();
-//            long totalTimeSeconds = (endTime - startTime) / 1000;
-//            System.out.println("\n--- Construção concluída ---");
-//            System.out.println("Total de tempo: " + totalTimeSeconds + " segundos");
-//        }
+        System.out.println("🚀 Iniciando o SafeSlip - Processador de Boletos.");
 
-          ConsultaCNPJ consultarCnpj = new ConsultaCNPJ();;
-          consultarCnpj.validarRazaoSocial();
-
-
+        try {
+            // Chama o método principal de processamento de boletos
+            processador.processarNovoBoleto(); 
+        } catch (IOException e) {
+            System.err.println("❌ Erro de I/O durante o processamento: " + e.getMessage());
+            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("❌ Erro de banco de dados durante o processamento: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            scanner.close(); // Sempre fechar o scanner para evitar vazamento de recursos
+            System.out.println("\n✅ Processamento do boleto concluído. SafeSlip encerrado.");
+        }
     }
 }
