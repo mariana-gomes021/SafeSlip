@@ -19,6 +19,8 @@ public class Boleto {
     private boolean denunciado;
     private String nomeCnpjReceita;
     private int usuarioId;
+    private boolean informacoesConfirmadasPeloUsuario;
+
 
     // Getters e Setters
     public int getId() {
@@ -125,4 +127,30 @@ public class Boleto {
     public void setStatusValidacaoBanco(String statusValidacaoBanco) {
         this.statusValidacaoBanco = statusValidacaoBanco;
     }
+
+     public boolean isInformacoesConfirmadasPeloUsuario() {
+        return informacoesConfirmadasPeloUsuario;
+    }
+
+    public void setInformacoesConfirmadasPeloUsuario(boolean informacoesConfirmadasPeloUsuario) {
+        this.informacoesConfirmadasPeloUsuario = informacoesConfirmadasPeloUsuario;
+    }
+
+     public BigDecimal getValorDoCodigoBarras() {
+        if (codigoBarras == null || codigoBarras.length() < 10) {
+            return BigDecimal.ZERO; // Ou lance uma exceção, dependendo da sua necessidade
+        }
+        // Os últimos 10 dígitos do código de barras representam o valor (formato 00000000.00)
+        // Você vai pegar os últimos 10, e os 2 últimos são decimais.
+        String valorStr = codigoBarras.substring(codigoBarras.length() - 10);
+        try {
+            // Insere a vírgula para converter para BigDecimal
+            String valorFormatado = valorStr.substring(0, 8) + "." + valorStr.substring(8, 10);
+            return new BigDecimal(valorFormatado);
+        } catch (NumberFormatException e) {
+            System.err.println("Erro ao converter valor do código de barras: " + e.getMessage());
+            return BigDecimal.ZERO; // Retorna zero ou null em caso de erro
+        }
+    }
+
 }
