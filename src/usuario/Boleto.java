@@ -137,7 +137,11 @@ public class Boleto {
     }
 
      public BigDecimal getValorDoCodigoBarras() {
-        if (codigoBarras == null || codigoBarras.length() < 10) {
+         if (!codigoBarras.matches("\\d{44}")) {
+             throw new IllegalArgumentException("Código de barras inválido.");
+         }
+
+         if (codigoBarras.isEmpty() || codigoBarras.length() < 10) {
             return BigDecimal.ZERO; // Ou lance uma exceção, dependendo da sua necessidade
         }
         // Os últimos 10 dígitos do código de barras representam o valor (formato 00000000.00)

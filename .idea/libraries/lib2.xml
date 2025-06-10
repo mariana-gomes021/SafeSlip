@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="lib2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/mysql-connector-j-9.3.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/tess4j-3.4.8.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

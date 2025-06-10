@@ -19,7 +19,7 @@ CREATE TABLE CNPJ_Emitente (
 
 CREATE TABLE CNPJ_Reputacao (
     cnpj VARCHAR(14) PRIMARY KEY,
-    score_reputacao DECIMAL(3,2) NOT NULL,
+    score_reputacao DECIMAL(5,2) NOT NULL,
     total_boletos INT DEFAULT 0,
     total_denuncias INT DEFAULT 0,
     ultima_atualizacao DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -101,3 +101,43 @@ FROM
 LEFT JOIN CNPJ_Emitente ce ON b.cnpj_emitente = ce.cnpj
 LEFT JOIN CNPJ_Reputacao cr ON b.cnpj_emitente = cr.cnpj
 LEFT JOIN PrevisaoFraude pf ON b.id = pf.boleto_id;
+
+INSERT INTO Usuario (nome, email) VALUES
+('Luara Lima', 'luara@example.com'),
+('Gabriel Costa', 'gabriel@example.com'),
+('Ana Martins', 'ana@example.com');
+
+
+INSERT INTO CNPJ_Emitente (cnpj, nome_razao_social, data_abertura, situacao_cadastral)
+VALUES
+('12345678000195', 'Empresa Fictícia A LTDA', '2010-01-10', 'ATIVA'),
+('98765432000111', 'Tech Corp B S.A.', '2015-07-23', 'ATIVA'),
+('11223344000100', 'Loja Exemplo C ME', '2020-03-15', 'INATIVA');
+
+INSERT INTO Boleto (codigo_barras, cnpj_emitente, valor, vencimento, status_validacao, nome_beneficiario, banco_emissor, denunciado, nome_cnpj_receita)
+VALUES
+('23793381286000000012345678901234567890123456', '12345678000195', 350.75, '2025-07-10', 'VALIDO', 'Empresa Fictícia A LTDA', 'Bradesco', TRUE, 'Empresa Fictícia A LTDA'),
+('00193373700000015001234567890123456789012345', '98765432000111', 150.00, '2025-07-15', 'VALIDO', 'Tech Corp B S.A.', 'Banco do Brasil', FALSE, 'Tech Corp B S.A.'),
+('34191090080000001231234567890123456789012345', '11223344000100', 75.90, '2025-07-20', 'INVALIDO', 'Loja Exemplo C', 'Itaú', TRUE, 'Loja Exemplo C ME');
+
+INSERT INTO Denuncia (descricao, cnpj, boleto_id, usuario_id)
+VALUES
+('Boleto falso enviado por e-mail.', '12345678000195', 1, 1),
+('Valor diferente do informado pelo atendente.', '11223344000100', 3, 2);
+
+INSERT INTO CNPJ_Reputacao (cnpj, score_reputacao, total_boletos, total_denuncias)
+VALUES
+('12345678000195', 0.80, 1, 1),
+('98765432000111', 1.00, 1, 0),
+('11223344000100', 0.50, 1, 1);
+
+INSERT INTO PrevisaoFraude (boleto_id, probabilidade_fraude)
+VALUES
+(1, 85.00),
+(2, 20.00),
+(3, 95.00);
+
+SELECT * FROM VisaoAnaliseBoleto;
+
+ALTER TABLE CNPJ_Reputacao MODIFY score_reputacao DECIMAL(5,2) NOT NULL;
+

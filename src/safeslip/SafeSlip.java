@@ -10,10 +10,12 @@ public class SafeSlip {
 
         System.out.println("Digite sua escolha (pdf ou linha digitavel):");
         String entrada = scanner.nextLine();
+         
 
         Escolha escolha = new Escolha();
         escolha.setResposta(entrada, scanner);
         escolha.escolha(); // <- ESSENCIAL
+
 
     }
 }
