@@ -7,13 +7,13 @@ import java.time.LocalDateTime;
 public class Boleto {
 
     private int id;
-    private String codigoBarras;
+    private String codigoBarras; // Este campo armazena a linha digitável de 47 dígitos.
     private String cnpjEmitente;
-    private BigDecimal valor;
+    private BigDecimal valor; // Este é o valor informado pelo usuário.
     private LocalDate vencimento;
     private LocalDateTime dataExtracao;
-    private String statusValidacao; // Mantido para o status da validação do CNPJ
-    private String statusValidacaoBanco; // Novo campo para o status da validação do Banco
+    private String statusValidacao;
+    private String statusValidacaoBanco;
     private String nomeBeneficiario;
     private String bancoEmissor;
     private boolean denunciado;
@@ -21,8 +21,16 @@ public class Boleto {
     private int usuarioId;
     private boolean informacoesConfirmadasPeloUsuario;
 
+    // Novos campos para armazenar dados da API
+    private String razaoSocialApi;
+    private String nomeFantasiaApi;
+    private String situacaoCadastralApi;
+    private String nomeBancoApi;          // Nome curto da API (ex: BCO BRADESCO S.A.)
+    private String nomeCompletoBancoApi;  // Nome completo da API (ex: Banco Bradesco S.A.)
+    private String ispbBancoApi; 
 
-    // Getters e Setters
+
+    // --- Getters e Setters Existentes ---
     public int getId() {
         return id;
     }
@@ -119,7 +127,6 @@ public class Boleto {
         this.usuarioId = usuarioId;
     }
 
-    // Novo getter e setter para statusValidacaoBanco
     public String getStatusValidacaoBanco() {
         return statusValidacaoBanco;
     }
@@ -136,25 +143,80 @@ public class Boleto {
         this.informacoesConfirmadasPeloUsuario = informacoesConfirmadasPeloUsuario;
     }
 
+     /**
+      * Extrai o valor do boleto a partir da linha digitável de 47 dígitos.
+      * O valor está no bloco 5, nos últimos 10 dígitos (posições 38 a 47).
+      * @return O valor do boleto como BigDecimal.
+      */
      public BigDecimal getValorDoCodigoBarras() {
-         if (!codigoBarras.matches("\\d{44}")) {
-             throw new IllegalArgumentException("Código de barras inválido.");
+         if (this.codigoBarras == null || this.codigoBarras.length() != 47) {
+             System.err.println("Erro: Linha digitável inválida para extração de valor. Esperado 47 dígitos, recebido " + (this.codigoBarras != null ? this.codigoBarras.length() : "null"));
+             return BigDecimal.ZERO;
          }
 
-         if (codigoBarras.isEmpty() || codigoBarras.length() < 10) {
-            return BigDecimal.ZERO; // Ou lance uma exceção, dependendo da sua necessidade
-        }
-        // Os últimos 10 dígitos do código de barras representam o valor (formato 00000000.00)
-        // Você vai pegar os últimos 10, e os 2 últimos são decimais.
-        String valorStr = codigoBarras.substring(codigoBarras.length() - 10);
+        // Para linha digitável (47 dígitos), o valor está nos últimos 10 dígitos, precedidos pelo 4º dígito verificador.
+        // O campo valor no padrão FEBRABAN está nas posições 38-47 (10 dígitos).
+        // Em Java, substring(startIndex, endIndexExclusive).
+        // Então, para pegar da posição 38 até 47, é substring(37, 47).
+        String valorStr = this.codigoBarras.substring(37, 47);
         try {
             // Insere a vírgula para converter para BigDecimal
             String valorFormatado = valorStr.substring(0, 8) + "." + valorStr.substring(8, 10);
             return new BigDecimal(valorFormatado);
         } catch (NumberFormatException e) {
-            System.err.println("Erro ao converter valor do código de barras: " + e.getMessage());
-            return BigDecimal.ZERO; // Retorna zero ou null em caso de erro
+            System.err.println("Erro ao converter valor do código de barras da linha digitável: " + e.getMessage());
+            return BigDecimal.ZERO;
         }
     }
+
+    // --- NOVOS GETTERS E SETTERS PARA DADOS DA API ---
+    public String getRazaoSocialApi() {
+        return razaoSocialApi;
+    }
+
+    public void setRazaoSocialApi(String razaoSocialApi) {
+        this.razaoSocialApi = razaoSocialApi;
+    }
+
+    public String getNomeFantasiaApi() {
+        return nomeFantasiaApi;
+    }
+
+    public void setNomeFantasiaApi(String nomeFantasiaApi) {
+        this.nomeFantasiaApi = nomeFantasiaApi;
+    }
+
+    public String getSituacaoCadastralApi() {
+        return situacaoCadastralApi;
+    }
+
+    public void setSituacaoCadastralApi(String situacaoCadastralApi) {
+        this.situacaoCadastralApi = situacaoCadastralApi;
+    }
+
+      public String getNomeBancoApi() {
+        return nomeBancoApi;
+    }
+
+    public void setNomeBancoApi(String nomeBancoApi) {
+        this.nomeBancoApi = nomeBancoApi;
+    }
+
+    public String getNomeCompletoBancoApi() {
+        return nomeCompletoBancoApi;
+    }
+
+    public void setNomeCompletoBancoApi(String nomeCompletoBancoApi) {
+        this.nomeCompletoBancoApi = nomeCompletoBancoApi;
+    }
+
+    public String getIspbBancoApi() {
+        return ispbBancoApi;
+    }
+
+    public void setIspbBancoApi(String ispbBancoApi) {
+        this.ispbBancoApi = ispbBancoApi;
+    }
+
 
 }

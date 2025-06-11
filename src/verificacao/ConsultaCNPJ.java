@@ -5,28 +5,23 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import org.json.JSONObject;
-import usuario.Boleto; // Certifique-se de que Boleto está no pacote correto
+import usuario.Boleto;
 
 public class ConsultaCNPJ {
 
-    private Boleto boleto; // Agora, esta é uma instância do boleto a ser validado
-    private String cnpjBoleto; // CNPJ extraído do boleto
-    private String nomeBeneficiarioBoleto; // Nome do beneficiário extraído do boleto
+    private Boleto boleto;
+    private String cnpjBoleto;
 
-    // Construtor que recebe o objeto Boleto
     public ConsultaCNPJ(Boleto boleto) {
         this.boleto = boleto;
-        // Garante que o CNPJ esteja apenas com dígitos e o nome em minúsculas para comparação
         this.cnpjBoleto = (boleto.getCnpjEmitente() != null) ? boleto.getCnpjEmitente().replaceAll("[^0-9]", "") : null;
-        this.nomeBeneficiarioBoleto = (boleto.getNomeBeneficiario() != null) ? boleto.getNomeBeneficiario().toLowerCase() : null;
     }
 
     /**
      * Consulta a API da BrasilAPI para obter dados de um CNPJ.
-     * @param cnpj O CNPJ a ser consultado (apenas dígitos).
-     * @return Um array de String contendo [cnpj_api, razao_social_api] ou null em caso de erro.
+     * Agora retorna um JSONObject completo ou null em caso de erro/não encontrado.
      */
-    public String[] getDadosCnpjDaApi(String cnpj) {
+    public JSONObject getDadosCnpjDaApi(String cnpj) {
         if (cnpj == null || cnpj.isEmpty()) {
             System.err.println("❌ CNPJ para consulta API é nulo ou vazio.");
             return null;
@@ -48,7 +43,7 @@ public class ConsultaCNPJ {
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(conexao.getInputStream()));
-            StringBuilder resposta = new StringBuilder(); // Usar StringBuilder é mais eficiente que StringBuffer
+            StringBuilder resposta = new StringBuilder();
             String linha;
 
             while ((linha = reader.readLine()) != null) {
@@ -60,22 +55,14 @@ public class ConsultaCNPJ {
 
             JSONObject json = new JSONObject(resposta.toString());
 
-            // Verifica se a API retornou um erro (ex: CNPJ inválido ou não encontrado)
-            // A BrasilAPI pode retornar status 200 mesmo com erro lógico no corpo
+            // Verifica se a API retornou um erro lógico (ex: CNPJ não encontrado)
             if (json.has("message") && json.getString("message").contains("não encontrado")) {
                  System.err.println("⚠️ CNPJ não encontrado na API: " + cnpj);
-                 return null;
+                 return null; // Retorna null se CNPJ não for encontrado
             }
-
-            String cnpjApi = json.getString("cnpj").replaceAll("[^0-9]", ""); // Normaliza para apenas dígitos
-            String razaoSocialApi = json.getString("razao_social").toLowerCase();
-
-            System.out.println("✅ Dados da API para CNPJ " + cnpj + ":");
-            System.out.println("   CNPJ da API: " + cnpjApi);
-            System.out.println("   Razão Social da API: " + razaoSocialApi);
-
-            String[] dadosApi = {cnpjApi, razaoSocialApi};
-            return dadosApi;
+            
+            // Se chegou aqui, a consulta foi bem-sucedida e o CNPJ foi encontrado
+            return json;
 
         } catch (Exception e) {
             System.err.println("❌ Erro durante a consulta ou processamento da API para CNPJ " + cnpj + ": " + e.getMessage());
@@ -85,53 +72,45 @@ public class ConsultaCNPJ {
     }
 
     /**
-     * Valida o CNPJ e a Razão Social do boleto comparando com os dados da BrasilAPI.
-     * @return Uma String indicando o status da validação ('VALIDO', 'INVALIDO', 'ERRO_API')
-     * ou null se as informações essenciais do boleto estiverem faltando.
+     * Valida o CNPJ do boleto comparando com os dados da BrasilAPI.
+     * Os dados da API são preenchidos diretamente no objeto Boleto.
+     * @return Uma String indicando o status da validação ('VALIDO', 'ERRO_API', 'CNPJ_DIVERGENTE', 'DADOS_NAO_ENCONTRADOS_API').
      */
     public String validarDadosComApi() {
         if (this.cnpjBoleto == null || this.cnpjBoleto.isEmpty()) {
             System.err.println("❌ CNPJ do boleto não encontrado. Não é possível validar com a API.");
-            return "ERRO"; // Ou 'INVALIDO' dependendo da sua regra de negócio
-        }
-        if (this.nomeBeneficiarioBoleto == null || this.nomeBeneficiarioBoleto.isEmpty()) {
-            System.err.println("❌ Nome do beneficiário do boleto não encontrado. Não é possível validar com a API.");
-            return "ERRO";
+            return "CNPJ_AUSENTE"; 
         }
 
-        String[] dadosApi = getDadosCnpjDaApi(this.cnpjBoleto);
+        JSONObject dadosApi = getDadosCnpjDaApi(this.cnpjBoleto);
 
         if (dadosApi == null) {
-            System.err.println("❌ Não foi possível obter dados da API para validação. Considerar como 'ERRO'.");
-            return "ERRO_API"; // Um novo status para indicar falha na consulta à API
+            System.err.println("❌ Não foi possível obter dados da API para validação ou CNPJ não encontrado na API.");
+            // Define os campos da API como "N/A" para indicar que não foram encontrados
+            boleto.setRazaoSocialApi("N/A");
+            boleto.setNomeFantasiaApi("N/A");
+            boleto.setSituacaoCadastralApi("N/A");
+            return "DADOS_NAO_ENCONTRADOS_API"; // Novo status para indicar falha na consulta ou CNPJ não encontrado
         }
 
-        String cnpjApi = dadosApi[0];
-        String razaoSocialApi = dadosApi[1];
-        
-        // Remove quaisquer caracteres especiais, pontos e traços do CNPJ para comparação
+        // Extrai e preenche os dados no objeto Boleto
+        String cnpjApiRetornado = dadosApi.optString("cnpj", "").replaceAll("[^0-9]", "");
+        String razaoSocialApi = dadosApi.optString("razao_social", "Não Informado na API");
+        String nomeFantasiaApi = dadosApi.optString("nome_fantasia", "Não Informado na API");
+        String situacaoCadastralApi = dadosApi.optString("situacao_cadastral", "Não Informado na API");
+
+        boleto.setRazaoSocialApi(razaoSocialApi);
+        boleto.setNomeFantasiaApi(nomeFantasiaApi);
+        boleto.setSituacaoCadastralApi(situacaoCadastralApi);
+
+        // Compara CNPJ para verificar se o que foi pesquisado é o que foi retornado
         String cnpjBoletoNormalizado = this.cnpjBoleto.replaceAll("[^0-9]", "");
-        String cnpjApiNormalizado = cnpjApi.replaceAll("[^0-9]", "");
-
-        // Compara CNPJ (normalizado)
-        if (!cnpjBoletoNormalizado.equals(cnpjApiNormalizado)) {
-            System.out.println("🚫 CNPJ do boleto (" + cnpjBoletoNormalizado + ") não bate com o da API (" + cnpjApiNormalizado + ").");
-            return "INVALIDO";
+        if (!cnpjBoletoNormalizado.equals(cnpjApiRetornado)) {
+            System.err.println("🚫 CNPJ pesquisado (" + cnpjBoletoNormalizado + ") difere do CNPJ retornado pela API (" + cnpjApiRetornado + ").");
+            return "CNPJ_DIVERGENTE";
         }
 
-        // Compara Razão Social (ambos em minúsculas para ignorar case)
-        // Adicionei .trim() para remover espaços extras e .replace(".", "") para pontos
-        // Você pode precisar de mais normalizações dependendo da variação dos nomes
-        String nomeBoletoNormalizado = this.nomeBeneficiarioBoleto.trim().replace(".", "");
-        String razaoApiNormalizada = razaoSocialApi.trim().replace(".", "");
-
-
-        if (!nomeBoletoNormalizado.equals(razaoApiNormalizada)) {
-            System.out.println("🚫 Nome do beneficiário do boleto ('" + nomeBoletoNormalizado + "') não bate com a Razão Social da API ('" + razaoApiNormalizada + "').");
-            return "INVALIDO";
-        }
-
-        System.out.println("✅ **CNPJ e Razão Social batem com os dados da API!**");
-        return "VALIDO";
+        System.out.println("✅ Dados do CNPJ recebidos da API.");
+        return "VALIDO_API"; // Indica que a API retornou dados válidos para o CNPJ
     }
 }
