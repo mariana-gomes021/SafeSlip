@@ -84,7 +84,7 @@ SELECT
         ELSE 'Indefinido'
     END AS ConfirmadoPeloUsuario,
     cr.total_boletos AS TotalBoletosCNPJ,
-    cr.total_denuncias AS TotalDenunciasCNPJ,
+    cr.total_suspeitas AS TotalDenunciasCNPJ,
     cr.score_reputacao AS ReputacaoCNPJScore,
     CASE
         WHEN cr.score_reputacao > 80 THEN 'Confiável'
@@ -102,12 +102,13 @@ SELECT
         WHEN REPLACE(LOWER(b.razao_social_api), ' ', '') LIKE CONCAT('%', REPLACE(LOWER(b.nome_beneficiario), ' ', ''), '%') THEN 'Sim'
         ELSE 'Não'
     END AS NomeBate,
-    -- Indicador se o boleto foi marcado como denunciado automaticamente
-    CASE b.denunciado
+    -- Indicador se o boleto foi marcado como suspeito automaticamente (antigo 'denunciado')
+    CASE b.suspeito -- RENOMEADO: agora usa 'suspeito'
         WHEN TRUE THEN 'Sim'
         WHEN FALSE THEN 'Não'
         ELSE 'Indefinido'
-    END AS DenunciadoAutomaticamente
+    END AS SuspeitoAutomaticamente, -- RENOMEADO: agora é 'SuspeitoAutomaticamente'
+    b.total_atualizacoes AS TotalAtualizacoesBoleto -- NOVA COLUNA: Incluído na VIEW
 FROM
     Boleto b
 LEFT JOIN CNPJ_Emitente ce ON b.cnpj_emitente = ce.cnpj
@@ -128,5 +129,8 @@ LIMIT 10;
 
 SELECT * FROM Boleto;
 select * from CNPJ_Emitente;
+select * from CNPJ_Reputacao;
 ALTER TABLE Boleto DROP COLUMN nome_cnpj_receita;
-
+ALTER TABLE Boleto ADD COLUMN total_atualizacoes INT DEFAULT 0;
+ALTER TABLE Boleto CHANGE COLUMN denunciado suspeito BOOLEAN DEFAULT FALSE;
+ALTER TABLE CNPJ_Reputacao CHANGE COLUMN total_denuncias total_suspeitas BOOLEAN DEFAULT FALSE;
