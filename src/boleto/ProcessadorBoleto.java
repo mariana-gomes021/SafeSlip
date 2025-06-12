@@ -45,18 +45,18 @@ public class ProcessadorBoleto {
     }
 
     public void processarNovoBoleto() throws IOException, SQLException {
-        System.out.println("\n📂 Abrindo a janela de seleção de arquivo. Por favor, selecione o boleto em PDF.");
+        System.out.println("\n Abrindo a janela de seleaoo de arquivo. Por favor, selecione o boleto em PDF.");
         
         File pdfSelecionado = envioBoleto.selecionarArquivoPDF();
         if (pdfSelecionado == null) {
-            System.err.println("❌ Processamento cancelado: Nenhum arquivo PDF foi selecionado.");
+            System.err.println("Processamento cancelado: Nenhum arquivo PDF foi selecionado.");
             return;
         }
 
         extracaoBoleto.setCaminhoToArquivo(pdfSelecionado);
         this.arquivoTxtParaApagar = extracaoBoleto.getArquivoTxtGerado(pdfSelecionado);
 
-        System.out.println("\n⏳ Iniciando extração do boleto...");
+        System.out.println("\n Iniciando extracao do boleto...");
         Boleto boletoExtraido = extracaoBoleto.processarTxt();
 
         boolean extracaoMinimaBemSucedida =
@@ -67,33 +67,33 @@ public class ProcessadorBoleto {
                 !boletoExtraido.getCnpjEmitente().isEmpty();
 
         if (extracaoMinimaBemSucedida) {
-            System.out.println("\n--- Detalhes do Boleto Extraído para Confirmação ---");
+            System.out.println("\n--- Detalhes do Boleto Extraido para Confirmacao ---");
             // Usando getValorAsBigDecimal() para exibição, mas verificando se não é nulo antes
-            System.out.println("💰 Valor: " + (boletoExtraido.getValorAsBigDecimal() != null ? boletoExtraido.getValorAsBigDecimal() : "Não encontrado"));
-            System.out.println("🗓️ Data de Vencimento: " + (boletoExtraido.getVencimento() != null ? boletoExtraido.getVencimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "Não encontrado"));
-            System.out.println("🏢 CNPJ do Beneficiário: " + (boletoExtraido.getCnpjEmitente() != null ? boletoExtraido.getCnpjEmitente() : "Não encontrado"));
-            System.out.println("📝 Nome do Beneficiário: " + (boletoExtraido.getNomeBeneficiario() != null ? boletoExtraido.getNomeBeneficiario() : "Não encontrado"));
-            System.out.println("🏦 Banco Emissor (extraído do PDF): " + (boletoExtraido.getBancoEmissor() != null ? boletoExtraido.getBancoEmissor() : "Não encontrado"));
-            System.out.println("🔢 Número do Código de Barras: " + (boletoExtraido.getCodigoBarras() != null ? boletoExtraido.getCodigoBarras() : "Não encontrado"));
+            System.out.println("Valor: " + (boletoExtraido.getValorAsBigDecimal() != null ? boletoExtraido.getValorAsBigDecimal() : "Nao encontrado"));
+            System.out.println("Data de Vencimento: " + (boletoExtraido.getVencimento() != null ? boletoExtraido.getVencimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "Nao encontrado"));
+            System.out.println("CNPJ do Beneficiario: " + (boletoExtraido.getCnpjEmitente() != null ? boletoExtraido.getCnpjEmitente() : "Nao encontrado"));
+            System.out.println("Nome do Beneficiario: " + (boletoExtraido.getNomeBeneficiario() != null ? boletoExtraido.getNomeBeneficiario() : "Nao encontrado"));
+            System.out.println("Banco Emissor (extraido do PDF): " + (boletoExtraido.getBancoEmissor() != null ? boletoExtraido.getBancoEmissor() : "Nao encontrado"));
+            System.out.println("Numero do Codigo de Barras: " + (boletoExtraido.getCodigoBarras() != null ? boletoExtraido.getCodigoBarras() : "Nao encontrado"));
             System.out.println("--------------------------------------------------");
 
             // PRIMEIRA PERGUNTA: Confirmação dos dados extraídos
-            System.out.println("\nAs informações do boleto estão corretas? (sim/nao)");
+            System.out.println("\n As informacoes do boleto estao corretas? (sim/nao)");
             String confirmacao = scanner.nextLine();
 
             boolean usuarioConfirmou = "sim".equalsIgnoreCase(confirmacao);
             boletoExtraido.setInformacoesConfirmadasPeloUsuario(usuarioConfirmou);
 
             if (!usuarioConfirmou && !"nao".equalsIgnoreCase(confirmacao)) {
-                System.out.println("❓ Resposta inválida. O boleto será salvo, mas marcado como não confirmado pelo usuário.");
+                System.out.println("Resposta inválida. O boleto sera salvo, mas marcado como nao confirmado pelo usuario.");
             } else if (!usuarioConfirmou) {
-                System.out.println("🚫 Usuário indicou que as informações não estão corretas. O boleto será salvo para análise, mas marcado como não confirmado.");
+                System.out.println("Usuario indicou que as informacoes nao estao corretas. O boleto sera salvo para analise, mas marcado como nao confirmado.");
             } else {
-                System.out.println("👍 Confirmação registrada. Prosseguindo com o salvamento e verificação.");
+                System.out.println("Confirmacao registrada. Prosseguindo com o salvamento e verificacao.");
             }
             
             // SEGUNDA PERGUNTA: Informações sobre desconto e valor original/sem desconto
-            System.out.println("\nEste boleto possui algum desconto? (sim/nao)");
+            System.out.println("\n Este boleto possui algum desconto? (sim/nao)");
             String temDescontoStr = scanner.nextLine().trim().toLowerCase();
             boolean temDesconto = "sim".equals(temDescontoStr);
 
@@ -105,19 +105,19 @@ public class ProcessadorBoleto {
                         String valorInput = scanner.nextLine().replace(",", "."); // Troca vírgula por ponto
                         valorSemDescontoInformado = new BigDecimal(valorInput);
                     } catch (NumberFormatException e) {
-                        System.err.println("❌ Formato de valor inválido. Digite novamente o valor original (ex: 123.45):");
+                        System.err.println("Formato de valor invalido. Digite novamente o valor original (ex: 123.45):");
                     }
                 }
             } else {
                 valorSemDescontoInformado = boletoExtraido.getValorAsBigDecimal(); // Usar getter para BigDecimal
                 if (valorSemDescontoInformado == null) {
-                    System.out.println("Valor não extraído do PDF. Por favor, digite o valor do pagamento do boleto (formato 00.00):");
+                    System.out.println("Valor nao extraido do PDF. Por favor, digite o valor do pagamento do boleto (formato 00.00):");
                      while (valorSemDescontoInformado == null) {
                         try {
                             String valorInput = scanner.nextLine().replace(",", ".");
                             valorSemDescontoInformado = new BigDecimal(valorInput);
                         } catch (NumberFormatException e) {
-                            System.err.println("❌ Formato de valor inválido. Digite novamente o valor (ex: 123.45):");
+                            System.err.println("Formato de valor invalido. Digite novamente o valor (ex: 123.45):");
                         }
                     }
                 }
@@ -126,14 +126,14 @@ public class ProcessadorBoleto {
             verificarValorBoleto(boletoExtraido.getCodigoBarras(), valorSemDescontoInformado);
             
             // INÍCIO DA VALIDAÇÃO DETALHADA DO CÓDIGO DE BARRAS
-            System.out.println("\n--- Realizando validação detalhada do Código de Barras ---");
+            System.out.println("\n--- Realizando validação detalhada do Codigo de Barras ---");
             boolean codigoBarrasEstruturaValida = ValidadorLinhaDigitavel.validar(boletoExtraido.getCodigoBarras());
             
             if (!codigoBarrasEstruturaValida) {
-                System.out.println("❌ Validação de estrutura do Código de Barras FALHOU. Marcarei como 'INVALIDO'.");
+                System.out.println("Validacao de estrutura do Codigo de Barras FALHOU. Marcarei como 'INVALIDO'.");
                 boletoExtraido.setStatusValidacao("INVALIDO"); // Ou um status mais específico como "ERRO_ESTRUTURA_CB"
             } else {
-                System.out.println("✅ Validação de estrutura do Código de Barras OK.");
+                System.out.println("Validacao de estrutura do Codigo de Barras OK.");
             }
             // FIM DA VALIDAÇÃO DETALHADA DO CÓDIGO DE BARRAS
 
@@ -141,17 +141,17 @@ public class ProcessadorBoleto {
             if (cnpjEmitente != null && !cnpjEmitente.isEmpty()) {
                 inserirOuAtualizarCnpjEmitente(cnpjEmitente, boletoExtraido.getNomeBeneficiario());
             } else {
-                System.err.println("⚠️ CNPJ do emitente não extraído ou inválido. O boleto será salvo, mas com um aviso.");
+                System.err.println("CNPJ do emitente nao extraido ou invalido. O boleto sera salvo, mas com um aviso.");
             }
 
-            System.out.println("\n🌐 Verificando dados do CNPJ do boleto com a BrasilAPI...");
+            System.out.println("\n Verificando dados do CNPJ do boleto...");
             ConsultaCNPJ consultaCnpj = new ConsultaCNPJ(boletoExtraido);
             String statusValidacaoCNPJAPI = consultaCnpj.validarDadosComApi();
             // Só atualiza se o status não foi marcado como INVÁLIDO pela validação de estrutura do CB
             if (!"INVALIDO".equals(boletoExtraido.getStatusValidacao())) {
                 boletoExtraido.setStatusValidacao(statusValidacaoCNPJAPI);
             }
-            System.out.println("ℹ️ Status da validação do CNPJ: " + statusValidacaoCNPJAPI);
+            System.out.println("Status da validacao do CNPJ: " + statusValidacaoCNPJAPI);
 
             // Início da nova lógica de comparação de nomes
             int verificacoesComFalha = 0; // Contador para verificações que falharem
@@ -165,27 +165,27 @@ public class ProcessadorBoleto {
 
                 if (!nomePdfLimpo.equals(razaoApiLimpa) && !nomePdfLimpo.contains(razaoApiLimpa)
                         && !razaoApiLimpa.contains(nomePdfLimpo)) {
-                    System.out.println("🚨 **ALERTA DE FRAUDE POTENCIAL:** Nome do beneficiário no PDF ('"
+                    System.out.println("**ALERTA DE FRAUDE POTENCIAL:** Nome do beneficiario no PDF ('"
                             + boletoExtraido.getNomeBeneficiario() +
                             "') DIVERGE da Razão Social da API ('" + boletoExtraido.getRazaoSocialApi()
                             + "') para este CNPJ.");
                     boletoExtraido.setStatusValidacao("ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE");
                     verificacoesComFalha++;
                 } else {
-                    System.out.println("✅ O nome do beneficiário no PDF ('" + boletoExtraido.getNomeBeneficiario() +
-                            "') BATE com a Razão Social da API ('" + boletoExtraido.getRazaoSocialApi() + "').");
+                    System.out.println("O nome do beneficiario no PDF ('" + boletoExtraido.getNomeBeneficiario() +
+                            "') BATE com a Razao Social ('" + boletoExtraido.getRazaoSocialApi() + "').");
                 }
             } else {
                 System.out.println(
-                        "ℹ️ Não foi possível comparar o nome do beneficiário do PDF com a Razão Social da API (dados ausentes ou não disponíveis).");
+                        "Nao foi possivel comparar o nome do beneficiario do PDF com a Razao Social(dados ausentes ou não disponíveis).");
             }
             // Fim da nova lógica de comparação de nomes
 
-            System.out.println("\n🏦 Verificando dados do banco do boleto com a BrasilAPI...");
+            System.out.println("\n Verificando dados do banco do boleto...");
             ConsultaBanco consultaBanco = new ConsultaBanco(boletoExtraido);
             String statusValidacaoBancoAPI = consultaBanco.validarBancoComApi();
             boletoExtraido.setStatusValidacaoBanco(statusValidacaoBancoAPI);
-            System.out.println("ℹ️ Status da validação do banco: " + statusValidacaoBancoAPI);
+            System.out.println("Status da validacao do banco: " + statusValidacaoBancoAPI);
 
 
             // Determinar se o boleto é "falho" para a reputação do CNPJ
@@ -238,20 +238,20 @@ public class ProcessadorBoleto {
                     }
 
                     System.out.println("Total de Boletos (CNPJ): " + totalBoletosCnpj);
-                    System.out.println("Total de Denúncias (CNPJ): " + totalDenunciasCnpj);
-                    System.out.printf("Score de Reputação (CNPJ): %.2f%%\n", score);
-                    System.out.println("Classificação (CNPJ): " + classificacao);
-                    System.out.println("Cálculo de reputação concluído para o CNPJ: " + boletoExtraido.getCnpjEmitente());
+                    System.out.println("Total de Denuncias (CNPJ): " + totalDenunciasCnpj);
+                    System.out.printf("Score de Reputacao (CNPJ): %.2f%%\n", score);
+                    System.out.println("Classificacao (CNPJ): " + classificacao);
+                    System.out.println("Calculo de reputacao concluido para o CNPJ: " + boletoExtraido.getCnpjEmitente());
 
                     if ((classificacao.equals("Reincidente") || classificacao.equals("Problemático"))
                             && totalDenunciasCnpj >= 10) {
                         boletoExtraido.setSuspeito(true); // ATUALIZADO: setSuspeito(true)
-                        System.out.println("🚨 Boleto de CNPJ classificado como '" + classificacao + "' e com "
-                                + totalDenunciasCnpj + " denúncias. Marcado como SUSPEITO automaticamente!"); // ATUALIZADO: SUSPEITO
+                        System.out.println("Boleto de CNPJ classificado como '" + classificacao + "' e com "
+                                + totalDenunciasCnpj + " denuncias. Marcado como SUSPEITO automaticamente!"); // ATUALIZADO: SUSPEITO
                     }
                 }
             } catch (SQLException e) {
-                System.err.println("❌ Erro ao processar reputação do CNPJ: " + e.getMessage());
+                System.err.println("Erro ao processar reputacao do CNPJ: " + e.getMessage());
                 // Não relança a exceção aqui para não impedir o salvamento do boleto
             }
             // FIM NOVO: Atualizar reputação do CNPJ
@@ -259,28 +259,28 @@ public class ProcessadorBoleto {
 
             Usuario usuarioAnonimo = repositorioUsuario.criarUsuarioAnonimo();
             if (usuarioAnonimo == null || usuarioAnonimo.getId() == 0) {
-                System.err.println("❌ Falha crítica: Não foi possível criar um usuário anônimo. O boleto não será salvo.");
+                System.err.println("Falha critica: Nao foi possivel criar um usuario anonimo. O boleto nao sera salvo.");
                 return;
             }
-            System.out.println("🔗 Novo usuário anônimo criado com ID: " + usuarioAnonimo.getId());
+            System.out.println("Novo usuario anonimo criado com ID: " + usuarioAnonimo.getId());
 
             boletoExtraido.setUsuarioId(usuarioAnonimo.getId());
 
-            System.out.println("\n💾 Tentando salvar boleto no banco de dados...");
-            System.out.println("    Status Validação CNPJ: " + boletoExtraido.getStatusValidacao());
-            System.out.println("    Status Validação Banco: " + boletoExtraido.getStatusValidacaoBanco());
-            System.out.println("    Informações Confirmadas Pelo Usuário: " + boletoExtraido.isInformacoesConfirmadasPeloUsuario());
+            System.out.println("\n Tentando salvar boleto no banco de dados...");
+            System.out.println("Status Validacao CNPJ: " + boletoExtraido.getStatusValidacao());
+            System.out.println("Status Validacao Banco: " + boletoExtraido.getStatusValidacaoBanco());
+            System.out.println("Informacoes Confirmadas Pelo Usuario: " + boletoExtraido.isInformacoesConfirmadasPeloUsuario());
             
 
             if (repositorioBoleto.inserirBoleto(boletoExtraido)) {
-                System.out.println("🎉 Boleto salvo no banco de dados com sucesso!");
+                System.out.println("Boleto salvo no banco de dados com sucesso!");
                 apagarArquivoTxtGerado();
             } else {
-                System.err.println("❌ Falha desconhecida ao salvar o boleto.");
+                System.err.println("Falha desconhecida ao salvar o boleto.");
             }
 
         } else {
-            System.out.println("\n🚫 Não foi possível extrair informações essenciais do boleto (código de barras ou CNPJ). Verifique o arquivo.");
+            System.out.println("\n Nao foi possível extrair informações essenciais do boleto (código de barras ou CNPJ). Verifique o arquivo.");
         }
     }
 
