@@ -29,9 +29,9 @@ public class RepositorioCnpjReputacao {
      * @throws SQLException Se ocorrer um erro no acesso ao banco de dados.
      */
     public void atualizarReputacaoCnpj(String cnpj, boolean isBoletoFalho, int boletoTotalAtualizacoes) throws SQLException {
-        String checkSql = "SELECT score_reputacao, total_boletos, total_denuncias FROM CNPJ_Reputacao WHERE cnpj = ?";
-        String insertSql = "INSERT INTO CNPJ_Reputacao (cnpj, score_reputacao, total_boletos, total_denuncias, ultima_atualizacao) VALUES (?, ?, ?, ?, ?)";
-        String updateSql = "UPDATE CNPJ_Reputacao SET score_reputacao = ?, total_boletos = ?, total_denuncias = ?, ultima_atualizacao = ? WHERE cnpj = ?";
+        String checkSql = "SELECT score_reputacao, total_boletos, total_suspeitas FROM CNPJ_Reputacao WHERE cnpj = ?";
+        String insertSql = "INSERT INTO CNPJ_Reputacao (cnpj, score_reputacao, total_boletos, total_suspeitas ultima_atualizacao) VALUES (?, ?, ?, ?, ?)";
+        String updateSql = "UPDATE CNPJ_Reputacao SET score_reputacao = ?, total_boletos = ?, total_suspeitas= ?, ultima_atualizacao = ? WHERE cnpj = ?";
 
         try (Connection conexao = ConexaoBD.getConexao()) {
             int totalBoletos = 0;
@@ -46,7 +46,7 @@ public class RepositorioCnpjReputacao {
                 if (rs.next()) {
                     scoreReputacao = rs.getBigDecimal("score_reputacao"); // Pega o score existente para ajustar
                     totalBoletos = rs.getInt("total_boletos");
-                    totalDenuncias = rs.getInt("total_denuncias");
+                    totalDenuncias = rs.getInt("total_suspeitas");
                 }
             }
 
@@ -119,12 +119,12 @@ public class RepositorioCnpjReputacao {
      * Busca os dados de reputação de um CNPJ.
      *
      * @param cnpj O CNPJ a ser buscado.
-     * @return Um array de Object contendo [score_reputacao (BigDecimal), total_boletos (int), total_denuncias (int)]
+     * @return Um array de Object contendo [score_reputacao (BigDecimal), total_boletos (int), total_suspeitas (int)]
      * ou null se o CNPJ não for encontrado.
      * @throws SQLException Se ocorrer um erro no acesso ao banco de dados.
      */
     public Object[] buscarReputacaoCnpj(String cnpj) throws SQLException {
-        String sql = "SELECT score_reputacao, total_boletos, total_denuncias FROM CNPJ_Reputacao WHERE cnpj = ?";
+        String sql = "SELECT score_reputacao, total_boletos, total_suspeitas FROM CNPJ_Reputacao WHERE cnpj = ?";
         try (Connection conexao = ConexaoBD.getConexao();
              PreparedStatement stmt = conexao.prepareStatement(sql)) {
             stmt.setString(1, cnpj);
@@ -132,7 +132,7 @@ public class RepositorioCnpjReputacao {
             if (rs.next()) {
                 BigDecimal score = rs.getBigDecimal("score_reputacao");
                 int totalBoletos = rs.getInt("total_boletos");
-                int totalDenuncias = rs.getInt("total_denuncias");
+                int totalDenuncias = rs.getInt("total_suspeitas");
                 return new Object[]{score, totalBoletos, totalDenuncias};
             }
         }
