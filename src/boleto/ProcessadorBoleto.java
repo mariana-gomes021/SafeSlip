@@ -39,7 +39,7 @@ public class ProcessadorBoleto {
         this.envioBoleto = new EnvioBoleto();
     }
 
-    public void processarNovoBoleto() throws IOException, SQLException {
+     public void processarNovoBoleto() throws IOException, SQLException {
         System.out.println("\n📂 Abrindo a janela de seleção de arquivo. Por favor, selecione o boleto em PDF.");
         
         File pdfSelecionado = envioBoleto.selecionarArquivoPDF();
@@ -49,7 +49,6 @@ public class ProcessadorBoleto {
         }
 
         extracaoBoleto.setCaminhoToArquivo(pdfSelecionado);
-        // Correção aqui: era 'extracaoBaoletos', agora é 'extracaoBoleto'
         this.arquivoTxtParaApagar = extracaoBoleto.getArquivoTxtGerado(pdfSelecionado);
 
         System.out.println("\n⏳ Iniciando extração do boleto...");
@@ -80,7 +79,7 @@ public class ProcessadorBoleto {
             boletoExtraido.setInformacoesConfirmadasPeloUsuario(usuarioConfirmou);
 
             if (!usuarioConfirmou && !"nao".equalsIgnoreCase(confirmacao)) {
-                 System.out.println("❓ Resposta inválida. O boleto será salvo, mas marcado como não confirmado pelo usuário.");
+                System.out.println("❓ Resposta inválida. O boleto será salvo, mas marcado como não confirmado pelo usuário.");
             } else if (!usuarioConfirmou) {
                 System.out.println("🚫 Usuário indicou que as informações não estão corretas. O boleto será salvo para análise, mas marcado como não confirmado.");
             } else {
@@ -128,13 +127,12 @@ public class ProcessadorBoleto {
                 System.out.println("❌ Validação de estrutura do Código de Barras FALHOU. Marcarei como 'INVALIDO'.");
                 boletoExtraido.setStatusValidacao("INVALIDO"); // Ou um status mais específico como "ERRO_ESTRUTURA_CB"
             } else {
-                 System.out.println("✅ Validação de estrutura do Código de Barras OK.");
-                 // Se o status já estiver 'VALIDO' e esta validação OK, mantém 'VALIDO'.
-                 // Se estava 'ERRO' por outro motivo (ex: CNPJ inválido), e esta OK, não muda de 'ERRO'.
-                 // Esta parte não sobrescreve um erro anterior, apenas complementa.
+                System.out.println("✅ Validação de estrutura do Código de Barras OK.");
+                // Se o status já estiver 'VALIDO' e esta validação OK, mantém 'VALIDO'.
+                // Se estava 'ERRO' por outro motivo (ex: CNPJ inválido), e esta OK, não muda de 'ERRO'.
+                // Esta parte não sobrescreve um erro anterior, apenas complementa.
             }
             // FIM DA VALIDAÇÃO DETALHADA DO CÓDIGO DE BARRAS
-
 
             String cnpjEmitente = boletoExtraido.getCnpjEmitente();
             if (cnpjEmitente != null && !cnpjEmitente.isEmpty()) {
@@ -152,6 +150,34 @@ public class ProcessadorBoleto {
             }
             System.out.println("ℹ️ Status da validação do CNPJ: " + statusValidacaoCNPJAPI);
 
+            // Início da nova lógica de comparação de nomes
+            int verificacoesComFalha = 0; // Contador para verificações que falharem
+            
+            String nomePdf = boletoExtraido.getNomeBeneficiario();
+            String razaoApi = boletoExtraido.getRazaoSocialApi();
+
+            if (nomePdf != null && !nomePdf.isEmpty() && razaoApi != null && !razaoApi.isEmpty()) {
+                String nomePdfLimpo = nomePdf.toLowerCase().replaceAll("\\s+", ""); // Remove espaços e converte para minúsculas
+                String razaoApiLimpa = razaoApi.toLowerCase().replaceAll("\\s+", ""); // Remove espaços e converte para minúsculas
+
+                if (!nomePdfLimpo.equals(razaoApiLimpa) && !nomePdfLimpo.contains(razaoApiLimpa)
+                        && !razaoApiLimpa.contains(nomePdfLimpo)) {
+                    System.out.println("🚨 **ALERTA DE FRAUDE POTENCIAL:** Nome do beneficiário no PDF ('"
+                            + boletoExtraido.getNomeBeneficiario() +
+                            "') DIVERGE da Razão Social da API ('" + boletoExtraido.getRazaoSocialApi()
+                            + "') para este CNPJ.");
+                    boletoExtraido.setStatusValidacao("ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE");
+                    verificacoesComFalha++;
+                } else {
+                    System.out.println("✅ O nome do beneficiário no PDF ('" + boletoExtraido.getNomeBeneficiario() +
+                            "') BATE com a Razão Social da API ('" + boletoExtraido.getRazaoSocialApi() + "').");
+                }
+            } else {
+                System.out.println(
+                        "ℹ️ Não foi possível comparar o nome do beneficiário do PDF com a Razão Social da API (dados ausentes ou não disponíveis).");
+            }
+            // Fim da nova lógica de comparação de nomes
+
             System.out.println("\n🏦 Verificando dados do banco do boleto com a BrasilAPI...");
             ConsultaBanco consultaBanco = new ConsultaBanco(boletoExtraido);
             String statusValidacaoBancoAPI = consultaBanco.validarBancoComApi();
@@ -168,9 +194,9 @@ public class ProcessadorBoleto {
             boletoExtraido.setUsuarioId(usuarioAnonimo.getId());
 
             System.out.println("\n💾 Tentando salvar boleto no banco de dados...");
-            System.out.println("   Status Validação CNPJ: " + boletoExtraido.getStatusValidacao());
-            System.out.println("   Status Validação Banco: " + boletoExtraido.getStatusValidacaoBanco());
-            System.out.println("   Informações Confirmadas Pelo Usuário: " + boletoExtraido.isInformacoesConfirmadasPeloUsuario());
+            System.out.println("    Status Validação CNPJ: " + boletoExtraido.getStatusValidacao());
+            System.out.println("    Status Validação Banco: " + boletoExtraido.getStatusValidacaoBanco());
+            System.out.println("    Informações Confirmadas Pelo Usuário: " + boletoExtraido.isInformacoesConfirmadasPeloUsuario());
             
 
             if (repositorioBoleto.inserirBoleto(boletoExtraido)) {
@@ -225,7 +251,7 @@ public class ProcessadorBoleto {
 
     private void inserirOuAtualizarCnpjEmitente(String cnpj, String nomeRazaoSocial) throws SQLException {
         String checkSql = "SELECT COUNT(*) FROM CNPJ_Emitente WHERE cnpj = ?";
-        String insertSql = "INSERT INTO CNPJ_Emitente (cnpj, nome_razao_social, situacao_cadastral, data_abertura) VALUES (?, ?, ?, ?)";
+        String insertSql = "INSERT INTO CNPJ_Emitente (cnpj, nome_razao_social, data_abertura) VALUES (?, ?, ?)";
 
         try (Connection conexao = ConexaoBD.getConexao()) {
             try (PreparedStatement checkStmt = conexao.prepareStatement(checkSql)) {
@@ -240,8 +266,7 @@ public class ProcessadorBoleto {
             try (PreparedStatement insertStmt = conexao.prepareStatement(insertSql)) {
                 insertStmt.setString(1, cnpj);
                 insertStmt.setString(2, nomeRazaoSocial != null && !nomeRazaoSocial.isEmpty() ? nomeRazaoSocial : "Desconhecido (Extraído do PDF)");
-                insertStmt.setString(3, "VERIFICAR API");
-                insertStmt.setDate(4, Date.valueOf(LocalDate.now()));
+                insertStmt.setDate(3, Date.valueOf(LocalDate.now()));
 
                 int linhasAfetadas = insertStmt.executeUpdate();
                 if (linhasAfetadas > 0) {
