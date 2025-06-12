@@ -171,6 +171,7 @@ public class ProcessadorBoleto {
             System.out.println("   Status Validação CNPJ: " + boletoExtraido.getStatusValidacao());
             System.out.println("   Status Validação Banco: " + boletoExtraido.getStatusValidacaoBanco());
             System.out.println("   Informações Confirmadas Pelo Usuário: " + boletoExtraido.isInformacoesConfirmadasPeloUsuario());
+            
 
             if (repositorioBoleto.inserirBoleto(boletoExtraido)) {
                 System.out.println("🎉 Boleto salvo no banco de dados com sucesso!");
