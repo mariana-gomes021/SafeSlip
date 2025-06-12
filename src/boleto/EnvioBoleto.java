@@ -1,6 +1,6 @@
 package boleto;
 import java.io.File;
-import javax.swing.JFileChooser;
+import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
@@ -13,11 +13,27 @@ public class EnvioBoleto {
     //Teste upload pdf
     private File arquivoPDF;
     public File selecionarArquivoPDF() {
+
+        JFrame framePai = new JFrame();
+        framePai.setAlwaysOnTop(true);
+        framePai.setLocationRelativeTo(null);
+        framePai.setUndecorated(true);
+        framePai.setVisible(true);
+
+
         JFileChooser seletor = new JFileChooser();
+
         seletor.setDialogTitle("Selecione o boleto em PDF");
         seletor.setFileFilter(new FileNameExtensionFilter("Arquivos PDF", "pdf"));
 
+        SwingUtilities.invokeLater(() -> {
+            framePai.toFront();
+            framePai.requestFocus();
+        });
+
         int resultado = seletor.showOpenDialog(null);
+
+        framePai.dispose();
 
         if (resultado == JFileChooser.APPROVE_OPTION) {
             arquivoPDF = seletor.getSelectedFile();
