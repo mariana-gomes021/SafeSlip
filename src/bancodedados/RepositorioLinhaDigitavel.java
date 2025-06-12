@@ -83,12 +83,12 @@ public class RepositorioLinhaDigitavel {
                     int totalAtualizacoesExistente = rs.getInt("total_atualizacoes"); // NOVO: Pega o valor atual
 
 
-                    System.out.println("⚠️ Boleto com código de barras '" + boleto.getCodigoBarras() + "' já existe no banco de dados.");
-                    System.out.println("   Status de Validação CNPJ atual: '" + statusValidacaoExistente + "'.");
-                    System.out.println("   Status de Validação Banco atual: '" + statusValidacaoBancoExistente + "'.");
-                    System.out.println("   Informações Confirmadas pelo Usuário (atual): " + infoConfirmadasExistente + ".");
-                    System.out.println("   Status Suspeito (atual): " + suspeitoExistente + "."); // NOVO: Exibe o status suspeito
-                    System.out.println("   Total de Atualizações: " + totalAtualizacoesExistente + "."); // NOVO: Exibe o contador
+                    System.out.println("Boleto com codigo de barras '" + boleto.getCodigoBarras() + "' ja existe.");
+                    System.out.println("Status de Validacao CNPJ atual: '" + statusValidacaoExistente + "'.");
+                    System.out.println("Status de Validacao Banco atual: '" + statusValidacaoBancoExistente + "'.");
+                    System.out.println("Informacoes Confirmadas pelo Usuario (atual): " + infoConfirmadasExistente + ".");
+                    System.out.println("Status Suspeito (atual): " + suspeitoExistente + "."); // NOVO: Exibe o status suspeito
+                    System.out.println("Total de Atualizacoes: " + totalAtualizacoesExistente + "."); // NOVO: Exibe o contador
 
                     // Decidir se precisa atualizar (se algum dos status ou informações mudou)
                     boolean precisaAtualizar =
@@ -109,7 +109,7 @@ public class RepositorioLinhaDigitavel {
                             suspeitoExistente != boleto.isSuspeito(); // NOVO: Compara o status suspeito
 
                     if (precisaAtualizar) {
-                        System.out.println("   Atualizando informações do boleto existente.");
+                        System.out.println("   Atualizando informacoes do boleto existente.");
                         try (PreparedStatement updateStmt = conexao.prepareStatement(updateSql)) {
                             int i = 1;
                             updateStmt.setString(i++, boleto.getCnpjEmitente());
@@ -141,7 +141,7 @@ public class RepositorioLinhaDigitavel {
                             System.out.println("   Boleto existente atualizado com sucesso!");
                         }
                     } else {
-                        System.out.println("   Nenhuma atualização necessária para o boleto existente.");
+                        System.out.println("   Nenhuma atualizacao necessaria para o boleto existente.");
                     }
                     return true; // Boleto já está no banco (ou foi atualizado)
                 }

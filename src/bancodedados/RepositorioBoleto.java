@@ -74,12 +74,12 @@ public class RepositorioBoleto {
                     // Define o totalAtualizacoes no objeto boleto para que possa ser usado na reputação
                     boleto.setTotalAtualizacoes(totalAtualizacoesExistente); 
 
-                    System.out.println("⚠️ Boleto com código de barras '" + boleto.getCodigoBarras() + "' já existe no banco de dados.");
-                    System.out.println("   Status de Validação CNPJ atual: '" + statusValidacaoExistente + "'.");
-                    System.out.println("   Status de Validação Banco atual: '" + statusValidacaoBancoExistente + "'.");
-                    System.out.println("   Informações Confirmadas pelo Usuário (atual): " + infoConfirmadasExistente + ".");
-                    System.out.println("   Status Suspeito (atual): " + suspeitoExistente + "."); // NOVO: Exibe o status suspeito
-                    System.out.println("   Total de Atualizações: " + totalAtualizacoesExistente + "."); // NOVO: Exibe o contador
+                    System.out.println("Boleto com codigo de barras '" + boleto.getCodigoBarras() + "' ja existe no banco de dados.");
+                    System.out.println("Status de Validacao CNPJ atual: '" + statusValidacaoExistente + "'.");
+                    System.out.println("Status de Validacao Banco atual: '" + statusValidacaoBancoExistente + "'.");
+                    System.out.println("Informacoes Confirmadas pelo Usuario: " + infoConfirmadasExistente + ".");
+                    System.out.println("Status Suspeito: " + suspeitoExistente + "."); // NOVO: Exibe o status suspeito
+                    System.out.println("Total de Atualizacoes: " + totalAtualizacoesExistente + "."); // NOVO: Exibe o contador
 
                     // Decidir se precisa atualizar (se algum dos status ou informações mudou)
                     boolean precisaAtualizar =
@@ -100,7 +100,7 @@ public class RepositorioBoleto {
                         suspeitoExistente != boleto.isSuspeito(); // NOVO: Compara o status suspeito
 
                     if (precisaAtualizar) {
-                        System.out.println("   Atualizando informações do boleto existente.");
+                        System.out.println("   Atualizando informacoes do boleto existente.");
                         try (PreparedStatement updateStmt = conexao.prepareStatement(updateSql)) {
                             int i = 1;
                             updateStmt.setBigDecimal(i++, boleto.getValorAsBigDecimal()); // Usando o getter para BigDecimal
@@ -130,10 +130,10 @@ public class RepositorioBoleto {
                             updateStmt.setString(i++, boleto.getCodigoBarras()); // WHERE clause
 
                             updateStmt.executeUpdate();
-                            System.out.println("   Boleto existente atualizado com sucesso!");
+                            System.out.println("Boleto existente atualizado com sucesso!");
                         }
                     } else {
-                        System.out.println("   Nenhuma atualização necessária para o boleto existente.");
+                        System.out.println("Nenhuma atualizacao necessaria para o boleto existente.");
                     }
                     return true; // Boleto já está no banco (ou foi atualizado)
                 }
@@ -172,7 +172,7 @@ public class RepositorioBoleto {
                 return linhasAfetadas > 0;
             }
         } catch (SQLException e) {
-            System.err.println("❌ Erro ao inserir ou verificar boleto no banco de dados: " + e.getMessage());
+            System.err.println("Erro ao inserir ou verificar boleto no banco de dados: " + e.getMessage());
             e.printStackTrace();
             throw e; // Re-lança a exceção para que ela seja tratada em ProcessadorBoleto
         }

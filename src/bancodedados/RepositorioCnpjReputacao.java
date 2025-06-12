@@ -30,7 +30,7 @@ public class RepositorioCnpjReputacao {
      */
     public void atualizarReputacaoCnpj(String cnpj, boolean isBoletoFalho, int boletoTotalAtualizacoes) throws SQLException {
         String checkSql = "SELECT score_reputacao, total_boletos, total_suspeitas FROM CNPJ_Reputacao WHERE cnpj = ?";
-        String insertSql = "INSERT INTO CNPJ_Reputacao (cnpj, score_reputacao, total_boletos, total_suspeitas ultima_atualizacao) VALUES (?, ?, ?, ?, ?)";
+        String insertSql = "INSERT INTO CNPJ_Reputacao (cnpj, score_reputacao, total_boletos, total_suspeitas, ultima_atualizacao) VALUES (?, ?, ?, ?, ?)";
         String updateSql = "UPDATE CNPJ_Reputacao SET score_reputacao = ?, total_boletos = ?, total_suspeitas= ?, ultima_atualizacao = ? WHERE cnpj = ?";
 
         try (Connection conexao = ConexaoBD.getConexao()) {
@@ -58,7 +58,7 @@ public class RepositorioCnpjReputacao {
 
             // NOVO: Lógica de penalidade baseada no número de atualizações do boleto
             if (boletoTotalAtualizacoes >= LIMITE_ATUALIZACOES_PARA_PENALIDADE) {
-                System.out.println("🚨 Boleto com CNPJ '" + cnpj + "' foi atualizado " + boletoTotalAtualizacoes + " vezes. Penalizando reputação!");
+                System.out.println("Boleto com CNPJ '" + cnpj + "' foi atualizado " + boletoTotalAtualizacoes + " vezes. Penalizando reputacao!");
                 // Penalidade: Reduz o score em X pontos por cada atualização acima do limite.
                 // Ou, uma penalidade fixa, ou adiciona às denúncias.
                 // Exemplo: penalidade de 5 pontos no score.
@@ -107,10 +107,10 @@ public class RepositorioCnpjReputacao {
                     insertStmt.setInt(4, totalDenuncias);
                     insertStmt.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()));
                     insertStmt.executeUpdate();
-                    System.out.println("✅ Reputação para CNPJ '" + cnpj + "' inserida.");
+                    System.out.println("Reputacao para CNPJ '" + cnpj + "' inserida.");
                 }
             } else {
-                System.out.println("🔄 Reputação para CNPJ '" + cnpj + "' atualizada.");
+                System.out.println("Reputacao para CNPJ '" + cnpj + "' atualizada.");
             }
         }
     }

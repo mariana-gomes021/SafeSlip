@@ -17,31 +17,31 @@ public class Escolha {
         this.scanner = scanner;
     }
 
-    public void escolha() {
+    public void escolha() throws SQLException {
         switch (resposta.toLowerCase()) {
             case "pdf":
                 ProcessadorBoleto processador = new ProcessadorBoleto(scanner);
                 try {
                     processador.processarNovoBoleto();
                 } catch (IOException e) {
-                    System.err.println("❌ Erro de I/O durante o processamento: " + e.getMessage());
+                    System.err.println("Erro de I/O durante o processamento: " + e.getMessage());
                     e.printStackTrace();
                 } catch (SQLException e) {
-                    System.err.println("❌ Erro de banco de dados durante o processamento: " + e.getMessage());
+                    System.err.println("Erro de banco de dados durante o processamento: " + e.getMessage());
                     e.printStackTrace();
                 } finally {
                     scanner.close();
-                    System.out.println("\n✅ Processamento do boleto concluído. SafeSlip encerrado.");
+                    System.out.println("\n Processamento do boleto concluido. SafeSlip encerrado.");
                 }
                 break;
             case "linha digitavel":
                 ProcessadorLinhaDigitavel processadorLinhaDigitavel = new ProcessadorLinhaDigitavel(scanner);
                 processadorLinhaDigitavel.processar();
                 scanner.close(); // Fechar o scanner também para esta opção
-                System.out.println("\n✅ Processamento da linha digital concluído. SafeSlip encerrado.");
+                System.out.println("\n Processamento da linha digital concluido. SafeSlip encerrado.");
                 break;
             default:
-                System.out.println("Opção inválida. Por favor, digite 'pdf' ou 'linha digital'.");
+                System.out.println("Opcao invalida. Por favor, digite 'pdf' ou 'linha digital'.");
                 scanner.close(); // Fechar o scanner para opção inválida também
                 break;
         }
