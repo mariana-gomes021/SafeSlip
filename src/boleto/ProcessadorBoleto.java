@@ -5,11 +5,13 @@ import usuario.Boleto;
 import usuario.Usuario;
 import bancodedados.RepositorioBoleto;
 import bancodedados.RepositorioUsuario;
+
 import bancodedados.ConexaoBD;
 import verificacao.ConsultaCNPJ;
 import verificacao.ConsultaBanco;
 import boleto.ValidadorLinhaDigitavel; // Importe a classe ValidadorCodigoBarras
 
+import java.time.format.DateTimeFormatter; 
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
@@ -21,25 +23,28 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.math.BigDecimal;
+import bancodedados.RepositorioCnpjReputacao; // Importar RepositorioCnpjReputacao
 
 public class ProcessadorBoleto {
 
     private ExtracaoBoleto extracaoBoleto;
     private RepositorioBoleto repositorioBoleto;
     private RepositorioUsuario repositorioUsuario;
+    private RepositorioCnpjReputacao repositorioCnpjReputacao; // Instância do repositório de reputação
     private Scanner scanner;
-    private EnvioBoleto envioBoleto; // Certifique-se de que EnvioBoleto está no pacote correto e acessível
-    private File arquivoTxtParaApagar;
+    private EnvioBoleto envioBoleto;
+    private File arquivoTxtParaApagar; // Para gerenciar o arquivo TXT gerado
 
     public ProcessadorBoleto(Scanner scanner) {
         this.extracaoBoleto = new ExtracaoBoleto();
         this.repositorioBoleto = new RepositorioBoleto();
         this.repositorioUsuario = new RepositorioUsuario();
+        this.repositorioCnpjReputacao = new RepositorioCnpjReputacao(); // Inicialização
         this.scanner = scanner;
         this.envioBoleto = new EnvioBoleto();
     }
 
-     public void processarNovoBoleto() throws IOException, SQLException {
+    public void processarNovoBoleto() throws IOException, SQLException {
         System.out.println("\n📂 Abrindo a janela de seleção de arquivo. Por favor, selecione o boleto em PDF.");
         
         File pdfSelecionado = envioBoleto.selecionarArquivoPDF();
@@ -63,8 +68,9 @@ public class ProcessadorBoleto {
 
         if (extracaoMinimaBemSucedida) {
             System.out.println("\n--- Detalhes do Boleto Extraído para Confirmação ---");
-            System.out.println("💰 Valor: " + (boletoExtraido.getValor() != null ? boletoExtraido.getValor() : "Não encontrado"));
-            System.out.println("🗓️ Data de Vencimento: " + (boletoExtraido.getVencimento() != null ? boletoExtraido.getVencimento().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "Não encontrado"));
+            // Usando getValorAsBigDecimal() para exibição, mas verificando se não é nulo antes
+            System.out.println("💰 Valor: " + (boletoExtraido.getValorAsBigDecimal() != null ? boletoExtraido.getValorAsBigDecimal() : "Não encontrado"));
+            System.out.println("🗓️ Data de Vencimento: " + (boletoExtraido.getVencimento() != null ? boletoExtraido.getVencimento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "Não encontrado"));
             System.out.println("🏢 CNPJ do Beneficiário: " + (boletoExtraido.getCnpjEmitente() != null ? boletoExtraido.getCnpjEmitente() : "Não encontrado"));
             System.out.println("📝 Nome do Beneficiário: " + (boletoExtraido.getNomeBeneficiario() != null ? boletoExtraido.getNomeBeneficiario() : "Não encontrado"));
             System.out.println("🏦 Banco Emissor (extraído do PDF): " + (boletoExtraido.getBancoEmissor() != null ? boletoExtraido.getBancoEmissor() : "Não encontrado"));
@@ -103,7 +109,7 @@ public class ProcessadorBoleto {
                     }
                 }
             } else {
-                valorSemDescontoInformado = boletoExtraido.getValor();
+                valorSemDescontoInformado = boletoExtraido.getValorAsBigDecimal(); // Usar getter para BigDecimal
                 if (valorSemDescontoInformado == null) {
                     System.out.println("Valor não extraído do PDF. Por favor, digite o valor do pagamento do boleto (formato 00.00):");
                      while (valorSemDescontoInformado == null) {
@@ -128,9 +134,6 @@ public class ProcessadorBoleto {
                 boletoExtraido.setStatusValidacao("INVALIDO"); // Ou um status mais específico como "ERRO_ESTRUTURA_CB"
             } else {
                 System.out.println("✅ Validação de estrutura do Código de Barras OK.");
-                // Se o status já estiver 'VALIDO' e esta validação OK, mantém 'VALIDO'.
-                // Se estava 'ERRO' por outro motivo (ex: CNPJ inválido), e esta OK, não muda de 'ERRO'.
-                // Esta parte não sobrescreve um erro anterior, apenas complementa.
             }
             // FIM DA VALIDAÇÃO DETALHADA DO CÓDIGO DE BARRAS
 
@@ -183,6 +186,76 @@ public class ProcessadorBoleto {
             String statusValidacaoBancoAPI = consultaBanco.validarBancoComApi();
             boletoExtraido.setStatusValidacaoBanco(statusValidacaoBancoAPI);
             System.out.println("ℹ️ Status da validação do banco: " + statusValidacaoBancoAPI);
+
+
+            // Determinar se o boleto é "falho" para a reputação do CNPJ
+            boolean isBoletoFalhoParaReputacao = false;
+            if ("INVALIDO".equals(boletoExtraido.getStatusValidacao()) ||
+                "ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE".equals(boletoExtraido.getStatusValidacao()) ||
+                "CNPJ_INVALIDO_FORMATO".equals(boletoExtraido.getStatusValidacao()) ||
+                "CNPJ_NAO_CONFIRMADO_USUARIO".equals(boletoExtraido.getStatusValidacao()) ||
+                "BANCO_NAO_CONFIRMADO_USUARIO".equals(boletoExtraido.getStatusValidacaoBanco()) ||
+                "ALERTA_GERAL_NAO_CONFORMIDADE".equals(boletoExtraido.getStatusValidacao())) {
+                isBoletoFalhoParaReputacao = true;
+            }
+
+            // NOVO: Atualizar reputação do CNPJ
+            try {
+                // Antes de chamar RepositorioCnpjReputacao.atualizarReputacaoCnpj, o boletoExtraido.totalAtualizacoes
+                // precisa estar com o valor correto do banco de dados (se o boleto já existia).
+                // Isso é feito no RepositorioBoleto.inserirBoleto (na parte de 'if (rs.next())')
+                // No entanto, para o ProcessadorBoleto, se o boleto *não existia* antes de ser extraído,
+                // totalAtualizacoes será 0, o que é o valor padrão. Se existia e foi atualizado,
+                // RepositorioBoleto já terá definido o valor em boletoExtraido.setTotalAtualizacoes().
+                repositorioCnpjReputacao.atualizarReputacaoCnpj(boletoExtraido.getCnpjEmitente(), isBoletoFalhoParaReputacao, boletoExtraido.getTotalAtualizacoes());
+
+                // Busca a reputação atualizada para exibir ao usuário e salvar no boleto
+                Object[] reputacaoAtual = repositorioCnpjReputacao
+                        .buscarReputacaoCnpj(boletoExtraido.getCnpjEmitente());
+                if (reputacaoAtual != null) {
+                    BigDecimal score = (BigDecimal) reputacaoAtual[0];
+                    int totalBoletosCnpj = (int) reputacaoAtual[1];
+                    int totalDenunciasCnpj = (int) reputacaoAtual[2];
+
+                    // Define os valores de reputação no objeto Boleto
+                    boletoExtraido.setScoreReputacaoCnpj(score);
+                    boletoExtraido.setTotalBoletosCnpj(totalBoletosCnpj);
+                    boletoExtraido.setTotalDenunciasCnpj(totalDenunciasCnpj);
+
+                    String classificacao;
+                    if (score.compareTo(new BigDecimal("80.00")) > 0) {
+                        classificacao = "Confiável";
+                    } else if (score.compareTo(new BigDecimal("50.00")) >= 0
+                            && score.compareTo(new BigDecimal("80.00")) <= 0) {
+                        classificacao = "Risco Moderado";
+                    } else {
+                        if (score.compareTo(BigDecimal.ZERO) == 0) {
+                            classificacao = "Reincidente";
+                        } else {
+                            classificacao = "Problemático";
+                        }
+                        System.out.println("\n⚠ Este CNPJ possui muitas denúncias anteriores. Risco elevado.");
+                    }
+
+                    System.out.println("Total de Boletos (CNPJ): " + totalBoletosCnpj);
+                    System.out.println("Total de Denúncias (CNPJ): " + totalDenunciasCnpj);
+                    System.out.printf("Score de Reputação (CNPJ): %.2f%%\n", score);
+                    System.out.println("Classificação (CNPJ): " + classificacao);
+                    System.out.println("Cálculo de reputação concluído para o CNPJ: " + boletoExtraido.getCnpjEmitente());
+
+                    if ((classificacao.equals("Reincidente") || classificacao.equals("Problemático"))
+                            && totalDenunciasCnpj >= 10) {
+                        boletoExtraido.setSuspeito(true); // ATUALIZADO: setSuspeito(true)
+                        System.out.println("🚨 Boleto de CNPJ classificado como '" + classificacao + "' e com "
+                                + totalDenunciasCnpj + " denúncias. Marcado como SUSPEITO automaticamente!"); // ATUALIZADO: SUSPEITO
+                    }
+                }
+            } catch (SQLException e) {
+                System.err.println("❌ Erro ao processar reputação do CNPJ: " + e.getMessage());
+                // Não relança a exceção aqui para não impedir o salvamento do boleto
+            }
+            // FIM NOVO: Atualizar reputação do CNPJ
+
 
             Usuario usuarioAnonimo = repositorioUsuario.criarUsuarioAnonimo();
             if (usuarioAnonimo == null || usuarioAnonimo.getId() == 0) {
@@ -253,7 +326,7 @@ public class ProcessadorBoleto {
         String checkSql = "SELECT COUNT(*) FROM CNPJ_Emitente WHERE cnpj = ?";
         String insertSql = "INSERT INTO CNPJ_Emitente (cnpj, nome_razao_social, data_abertura) VALUES (?, ?, ?)";
 
-        try (Connection conexao = ConexaoBD.getConexao()) {
+        try (Connection conexao = bancodedados.ConexaoBD.getConexao()) {
             try (PreparedStatement checkStmt = conexao.prepareStatement(checkSql)) {
                 checkStmt.setString(1, cnpj);
                 ResultSet rs = checkStmt.executeQuery();

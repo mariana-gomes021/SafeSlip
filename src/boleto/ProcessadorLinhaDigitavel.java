@@ -18,6 +18,7 @@ import bancodedados.RepositorioLinhaDigitavel; // Novo repositório
 import bancodedados.RepositorioUsuario; // Assumindo que a classe RepositorioUsuario existe
 import usuario.Usuario; 
 
+import bancodedados.RepositorioCnpjReputacao; 
 import bancodedados.ConexaoBD; // Importar ConexaoBD
 import java.sql.Connection; // Importar Connection para o método inserirOuAtualizarCnpjEmitente
 import java.sql.Date; // Importar Date
@@ -31,14 +32,17 @@ public class ProcessadorLinhaDigitavel {
     private Scanner scanner;
     private RepositorioLinhaDigitavel repositorioLinhaDigitavel; // Novo repositório
     private RepositorioUsuario repositorioUsuario; // Para criar/obter usuário anônimo
+    private RepositorioCnpjReputacao repositorioCnpjReputacao; // NOVO: Instância do repositório de reputação
+
 
     public ProcessadorLinhaDigitavel(Scanner scanner) {
         this.scanner = scanner;
         this.repositorioLinhaDigitavel = new RepositorioLinhaDigitavel();
         this.repositorioUsuario = new RepositorioUsuario();
+        this.repositorioCnpjReputacao = new RepositorioCnpjReputacao(); // NOVO: Inicialização
     }
 
-   public void processar() throws SQLException {
+    public void processar() throws SQLException { // Adicionado throws SQLException
         System.out.println("\n--- Processamento de Boleto por Linha Digital ---");
         System.out.println("Por favor, digite a linha digital (código de barras, com ou sem pontos/espaços):");
         
@@ -110,7 +114,7 @@ public class ProcessadorLinhaDigitavel {
                 }
             }
         }
-        boleto.setValor(valorInformadoPeloUsuario);
+        boleto.setValor(valorInformadoPeloUsuario); // Usa o setter de BigDecimal
 
         BigDecimal valorDoCodigoBarras = null;
         // Tenta extrair o valor do código de barras da linha digital
@@ -159,6 +163,9 @@ public class ProcessadorLinhaDigitavel {
             System.out.println("--------------------------------------------------");
 
             // Lógica de comparação de nomes (similar ao ProcessadorBoleto)
+            // Para boletos via linha digitável, o nome do beneficiário (nomePdf)
+            // é o que o usuário *espera* ou o nome extraído de alguma outra fonte
+            // que não seja o PDF. Se não for preenchido, a comparação será informativa.
             String nomePdf = boleto.getNomeBeneficiario(); // Manterá o valor original ou será nulo/vazio
             String razaoApi = boleto.getRazaoSocialApi();
 
@@ -255,12 +262,73 @@ public class ProcessadorLinhaDigitavel {
         // Atualiza o status geral do boleto com base nas falhas de verificação
         if (verificacoesComFalha > 0 && !"ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE".equals(boleto.getStatusValidacao())) {
             boleto.setStatusValidacao("ALERTA_GERAL_NAO_CONFORMIDADE");
-            boleto.setDenunciado(true); // Marca como denunciado automaticamente se houver falhas
+            boleto.setSuspeito(true); // ATUALIZADO: setSuspeito(true)
         } else if (verificacoesComFalha == 0 && !"ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE".equals(boleto.getStatusValidacao()) && !"ERRO_ESTRUTURA_LD".equals(boleto.getStatusValidacao())) {
-            // Se não houve falhas e não há alerta de fraude por nome/CNPJ ou erro de estrutura LD
             boleto.setStatusValidacao("VALIDO_COMPLETO");
         }
 
+        // Determinar se o boleto é "falho" para a reputação do CNPJ
+        boolean isBoletoFalhoParaReputacao = false;
+        if ("INVALIDO".equals(boleto.getStatusValidacao()) ||
+            "ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE".equals(boleto.getStatusValidacao()) ||
+            "CNPJ_INVALIDO_FORMATO".equals(boleto.getStatusValidacao()) ||
+            "CNPJ_NAO_CONFIRMADO_USUARIO".equals(boleto.getStatusValidacao()) ||
+            "BANCO_NAO_CONFIRMADO_USUARIO".equals(boleto.getStatusValidacaoBanco()) ||
+            "ALERTA_GERAL_NAO_CONFORMIDADE".equals(boleto.getStatusValidacao())) {
+            isBoletoFalhoParaReputacao = true;
+        }
+
+        // NOVO: Atualizar reputação do CNPJ
+        try {
+            // Passa o CNPJ emitente, se o boleto é "falho" e o total de atualizações deste boleto
+            repositorioCnpjReputacao.atualizarReputacaoCnpj(boleto.getCnpjEmitente(), isBoletoFalhoParaReputacao, boleto.getTotalAtualizacoes());
+
+            // Busca a reputação atualizada para exibir ao usuário e salvar no boleto
+            Object[] reputacaoAtual = repositorioCnpjReputacao
+                    .buscarReputacaoCnpj(boleto.getCnpjEmitente());
+            if (reputacaoAtual != null) {
+                BigDecimal score = (BigDecimal) reputacaoAtual[0];
+                int totalBoletosCnpj = (int) reputacaoAtual[1];
+                int totalDenunciasCnpj = (int) reputacaoAtual[2];
+
+                // Define os valores de reputação no objeto Boleto
+                boleto.setScoreReputacaoCnpj(score);
+                boleto.setTotalBoletosCnpj(totalBoletosCnpj);
+                boleto.setTotalDenunciasCnpj(totalDenunciasCnpj);
+
+                String classificacao;
+                if (score.compareTo(new BigDecimal("80.00")) > 0) {
+                    classificacao = "Confiável";
+                } else if (score.compareTo(new BigDecimal("50.00")) >= 0
+                        && score.compareTo(new BigDecimal("80.00")) <= 0) {
+                    classificacao = "Risco Moderado";
+                } else {
+                    if (score.compareTo(BigDecimal.ZERO) == 0) {
+                        classificacao = "Reincidente";
+                    } else {
+                        classificacao = "Problemático";
+                    }
+                    System.out.println("\n⚠ Este CNPJ possui muitas denúncias anteriores. Risco elevado.");
+                }
+
+                System.out.println("Total de Boletos (CNPJ): " + totalBoletosCnpj);
+                System.out.println("Total de Denúncias (CNPJ): " + totalDenunciasCnpj);
+                System.out.printf("Score de Reputação (CNPJ): %.2f%%\n", score);
+                System.out.println("Classificação (CNPJ): " + classificacao);
+                System.out.println("Cálculo de reputação concluído para o CNPJ: " + boleto.getCnpjEmitente());
+
+                if ((classificacao.equals("Reincidente") || classificacao.equals("Problemático"))
+                        && totalDenunciasCnpj >= 10) {
+                    boleto.setSuspeito(true); // ATUALIZADO: setSuspeito(true)
+                    System.out.println("🚨 Boleto de CNPJ classificado como '" + classificacao + "' e com "
+                            + totalDenunciasCnpj + " denúncias. Marcado como SUSPEITO automaticamente!"); // ATUALIZADO: SUSPEITO
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Erro ao processar reputação do CNPJ: " + e.getMessage());
+            // Não relança a exceção aqui para não impedir o salvamento do boleto
+        }
+        // FIM NOVO: Atualizar reputação do CNPJ
 
         // Associa o boleto a um usuário anônimo antes de salvar
         Usuario usuarioAnonimo = repositorioUsuario.criarUsuarioAnonimo();
@@ -273,7 +341,7 @@ public class ProcessadorLinhaDigitavel {
 
         System.out.println("\n--- Resumo e Preparação para Salvamento ---");
         System.out.println("Linha Digital: " + boleto.getCodigoBarras());
-        System.out.println("Valor Informado pelo Usuário: " + boleto.getValor());
+        System.out.println("Valor Informado pelo Usuário: " + boleto.getValorAsBigDecimal()); // Usando o getter para BigDecimal
         System.out.println("Valor Extraído da Linha Digital: " + valorDoCodigoBarras);
         System.out.println("CNPJ Beneficiário Informado: " + boleto.getCnpjEmitente());
         System.out.println("Razão Social (API): " + (boleto.getRazaoSocialApi() != null ? boleto.getRazaoSocialApi() : "Não disponível"));
@@ -285,7 +353,8 @@ public class ProcessadorLinhaDigitavel {
         System.out.println("Informações CNPJ e Banco Confirmadas pelo Usuário: " + (boleto.isInformacoesConfirmadasPeloUsuario() ? "Sim" : "Não"));
         System.out.println("Status de Validação Geral: " + boleto.getStatusValidacao());
         System.out.println("Status de Validação de Banco: " + boleto.getStatusValidacaoBanco());
-        System.out.println("Denunciado Automaticamente: " + (boleto.isDenunciado() ? "Sim" : "Não"));
+        System.out.println("Suspeito Automaticamente: " + (boleto.isSuspeito() ? "Sim" : "Não")); // ATUALIZADO: Suspeito
+        System.out.println("Total de Atualizações deste Boleto: " + boleto.getTotalAtualizacoes()); // NOVO: Exibe total de atualizações
 
         System.out.println("\n💾 Tentando salvar boleto no banco de dados...");
         try {

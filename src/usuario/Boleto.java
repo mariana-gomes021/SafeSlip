@@ -4,64 +4,70 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+// Certifique-se de que esta classe está no pacote correto, como 'boleto'
 public class Boleto {
-
-    private int id;
-    private String codigoBarras; // Este campo armazena a linha digitável de 47 dígitos.
-    private String cnpjEmitente;
-    private BigDecimal valor; // Este é o valor informado pelo usuário.
+    private String valor; // Manter como String para extração bruta, converter para BigDecimal depois
     private LocalDate vencimento;
+    private String cnpjEmitente;
+    private String nomeBeneficiario; // Nome extraído do PDF
+    private String bancoEmissor; // Código do banco extraído do PDF ou linha digitável
+    private String codigoBarras;
     private LocalDateTime dataExtracao;
-    private String statusValidacao;
-    private String statusValidacaoBanco;
-    private String nomeBeneficiario;
-    private String bancoEmissor;
-    private boolean denunciado;
-    private String nomeCnpjReceita;
-    private int usuarioId;
+    private String statusValidacao; // Ex: VALIDO, INVALIDO, ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE, etc.
+    private String statusValidacaoBanco; // Ex: VALIDO_API, ERRO_API, BANCO_NAO_CONFIRMADO_USUARIO
     private boolean informacoesConfirmadasPeloUsuario;
+    private int usuarioId; // ID do usuário que processou o boleto
+    private boolean suspeito; // RENOMEADO DE 'denunciado' PARA 'suspeito'
 
-    // Novos campos para armazenar dados da API
+    // Campos da BrasilAPI - CNPJ
     private String razaoSocialApi;
     private String nomeFantasiaApi;
-    private String situacaoCadastralApi;
-    private String nomeBancoApi;          // Nome curto da API (ex: BCO BRADESCO S.A.)
-    private String nomeCompletoBancoApi;  // Nome completo da API (ex: Banco Bradesco S.A.)
-    private String ispbBancoApi; 
+    private String situacaoCadastralApi; // Pode ser útil manter, mesmo que não seja salvo no Boleto diretamente
+    private String dataAberturaApi; // Pode ser útil, se extraído da API
+
+    // Campos da BrasilAPI - Banco
+    private String nomeBancoApi;
+    private String nomeCompletoBancoApi;
+    private String ispbBancoApi;
+
+    // Campos para a Reputação do CNPJ (não são persistidos no Boleto, mas são preenchidos para exibição/lógica)
+    private BigDecimal scoreReputacaoCnpj;
+    private int totalBoletosCnpj;
+    private int totalDenunciasCnpj;
+
+    // NOVO CAMPO: Contador de atualizações para o boleto específico (lido do banco)
+    private int totalAtualizacoes;
 
 
-    // --- Getters e Setters Existentes ---
-    public int getId() {
-        return id;
+    // Construtor vazio
+    public Boleto() {
+        this.dataExtracao = LocalDateTime.now(); // Define a data de extração no momento da criação
+        this.statusValidacao = "PENDENTE"; // Status inicial
+        this.statusValidacaoBanco = "PENDENTE"; // Status inicial do banco
+        this.informacoesConfirmadasPeloUsuario = false; // Padrão
+        this.suspeito = false; // Padrão
+        this.totalAtualizacoes = 0; // Padrão
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    // --- Getters e Setters ---
 
-    public String getCodigoBarras() {
-        return codigoBarras;
-    }
-
-    public void setCodigoBarras(String codigoBarras) {
-        this.codigoBarras = codigoBarras;
-    }
-
-    public String getCnpjEmitente() {
-        return cnpjEmitente;
-    }
-
-    public void setCnpjEmitente(String cnpjEmitente) {
-        this.cnpjEmitente = cnpjEmitente;
-    }
-
-    public BigDecimal getValor() {
+    public String getValor() {
         return valor;
     }
 
-    public void setValor(BigDecimal valor) {
-        this.valor = valor;
+    public void setValor(BigDecimal valor) { // Aceita BigDecimal
+        this.valor = valor != null ? valor.toPlainString() : null; // Converte para String
     }
+    
+    // Método para obter o valor como BigDecimal (útil para cálculos)
+    public BigDecimal getValorAsBigDecimal() {
+        try {
+            return new BigDecimal(this.valor);
+        } catch (NumberFormatException | NullPointerException e) {
+            return BigDecimal.ZERO; // Retorna zero ou lança exceção, dependendo da sua regra de negócio
+        }
+    }
+
 
     public LocalDate getVencimento() {
         return vencimento;
@@ -71,20 +77,12 @@ public class Boleto {
         this.vencimento = vencimento;
     }
 
-    public LocalDateTime getDataExtracao() {
-        return dataExtracao;
+    public String getCnpjEmitente() {
+        return cnpjEmitente;
     }
 
-    public void setDataExtracao(LocalDateTime dataExtracao) {
-        this.dataExtracao = dataExtracao;
-    }
-
-    public String getStatusValidacao() {
-        return statusValidacao;
-    }
-
-    public void setStatusValidacao(String statusValidacao) {
-        this.statusValidacao = statusValidacao;
+    public void setCnpjEmitente(String cnpjEmitente) {
+        this.cnpjEmitente = cnpjEmitente;
     }
 
     public String getNomeBeneficiario() {
@@ -103,28 +101,28 @@ public class Boleto {
         this.bancoEmissor = bancoEmissor;
     }
 
-    public boolean isDenunciado() {
-        return denunciado;
+    public String getCodigoBarras() {
+        return codigoBarras;
     }
 
-    public void setDenunciado(boolean denunciado) {
-        this.denunciado = denunciado;
+    public void setCodigoBarras(String codigoBarras) {
+        this.codigoBarras = codigoBarras;
     }
 
-    public String getNomeCnpjReceita() {
-        return nomeCnpjReceita;
+    public LocalDateTime getDataExtracao() {
+        return dataExtracao;
     }
 
-    public void setNomeCnpjReceita(String nomeCnpjReceita) {
-        this.nomeCnpjReceita = nomeCnpjReceita;
+    public void setDataExtracao(LocalDateTime dataExtracao) {
+        this.dataExtracao = dataExtracao;
     }
 
-    public int getUsuarioId() {
-        return usuarioId;
+    public String getStatusValidacao() {
+        return statusValidacao;
     }
 
-    public void setUsuarioId(int usuarioId) {
-        this.usuarioId = usuarioId;
+    public void setStatusValidacao(String statusValidacao) {
+        this.statusValidacao = statusValidacao;
     }
 
     public String getStatusValidacaoBanco() {
@@ -135,7 +133,7 @@ public class Boleto {
         this.statusValidacaoBanco = statusValidacaoBanco;
     }
 
-     public boolean isInformacoesConfirmadasPeloUsuario() {
+    public boolean isInformacoesConfirmadasPeloUsuario() {
         return informacoesConfirmadasPeloUsuario;
     }
 
@@ -143,33 +141,22 @@ public class Boleto {
         this.informacoesConfirmadasPeloUsuario = informacoesConfirmadasPeloUsuario;
     }
 
-     /**
-      * Extrai o valor do boleto a partir da linha digitável de 47 dígitos.
-      * O valor está no bloco 5, nos últimos 10 dígitos (posições 38 a 47).
-      * @return O valor do boleto como BigDecimal.
-      */
-     public BigDecimal getValorDoCodigoBarras() {
-         if (this.codigoBarras == null || this.codigoBarras.length() != 47) {
-             System.err.println("Erro: Linha digitável inválida para extração de valor. Esperado 47 dígitos, recebido " + (this.codigoBarras != null ? this.codigoBarras.length() : "null"));
-             return BigDecimal.ZERO;
-         }
-
-        // Para linha digitável (47 dígitos), o valor está nos últimos 10 dígitos, precedidos pelo 4º dígito verificador.
-        // O campo valor no padrão FEBRABAN está nas posições 38-47 (10 dígitos).
-        // Em Java, substring(startIndex, endIndexExclusive).
-        // Então, para pegar da posição 38 até 47, é substring(37, 47).
-        String valorStr = this.codigoBarras.substring(37, 47);
-        try {
-            // Insere a vírgula para converter para BigDecimal
-            String valorFormatado = valorStr.substring(0, 8) + "." + valorStr.substring(8, 10);
-            return new BigDecimal(valorFormatado);
-        } catch (NumberFormatException e) {
-            System.err.println("Erro ao converter valor do código de barras da linha digitável: " + e.getMessage());
-            return BigDecimal.ZERO;
-        }
+    public int getUsuarioId() {
+        return usuarioId;
     }
 
-    // --- NOVOS GETTERS E SETTERS PARA DADOS DA API ---
+    public void setUsuarioId(int usuarioId) {
+        this.usuarioId = usuarioId;
+    }
+
+    public boolean isSuspeito() { // RENOMEADO: antigo isDenunciado()
+        return suspeito;
+    }
+
+    public void setSuspeito(boolean suspeito) { // RENOMEADO: antigo setDenunciado()
+        this.suspeito = suspeito;
+    }
+
     public String getRazaoSocialApi() {
         return razaoSocialApi;
     }
@@ -194,7 +181,15 @@ public class Boleto {
         this.situacaoCadastralApi = situacaoCadastralApi;
     }
 
-      public String getNomeBancoApi() {
+    public String getDataAberturaApi() {
+        return dataAberturaApi;
+    }
+
+    public void setDataAberturaApi(String dataAberturaApi) {
+        this.dataAberturaApi = dataAberturaApi;
+    }
+
+    public String getNomeBancoApi() {
         return nomeBancoApi;
     }
 
@@ -218,5 +213,35 @@ public class Boleto {
         this.ispbBancoApi = ispbBancoApi;
     }
 
+    public BigDecimal getScoreReputacaoCnpj() {
+        return scoreReputacaoCnpj;
+    }
 
+    public void setScoreReputacaoCnpj(BigDecimal scoreReputacaoCnpj) {
+        this.scoreReputacaoCnpj = scoreReputacaoCnpj;
+    }
+
+    public int getTotalBoletosCnpj() {
+        return totalBoletosCnpj;
+    }
+
+    public void setTotalBoletosCnpj(int totalBoletosCnpj) {
+        this.totalBoletosCnpj = totalBoletosCnpj;
+    }
+
+    public int getTotalDenunciasCnpj() {
+        return totalDenunciasCnpj;
+    }
+
+    public void setTotalDenunciasCnpj(int totalDenunciasCnpj) {
+        this.totalDenunciasCnpj = totalDenunciasCnpj;
+    }
+
+    public int getTotalAtualizacoes() { // NOVO GETTER
+        return totalAtualizacoes;
+    }
+
+    public void setTotalAtualizacoes(int totalAtualizacoes) { // NOVO SETTER
+        this.totalAtualizacoes = totalAtualizacoes;
+    }
 }
