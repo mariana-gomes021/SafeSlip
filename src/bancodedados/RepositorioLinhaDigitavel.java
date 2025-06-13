@@ -138,10 +138,10 @@ public class RepositorioLinhaDigitavel {
                             updateStmt.setString(i++, boleto.getCodigoBarras()); // WHERE clause
 
                             updateStmt.executeUpdate();
-                            System.out.println("   Boleto existente atualizado com sucesso!");
+                            System.out.println("Boleto existente atualizado com sucesso!");
                         }
                     } else {
-                        System.out.println("   Nenhuma atualizacao necessaria para o boleto existente.");
+                        System.out.println("Nenhuma atualizacao necessaria para o boleto existente.");
                     }
                     return true; // Boleto já está no banco (ou foi atualizado)
                 }
@@ -178,7 +178,7 @@ public class RepositorioLinhaDigitavel {
                 return linhasAfetadas > 0;
             }
         } catch (SQLException e) {
-            System.err.println("❌ Erro ao inserir ou verificar boleto por linha digitável no banco de dados: " + e.getMessage());
+            System.err.println("Erro ao inserir ou verificar boleto por linha digitável." + e.getMessage());
             e.printStackTrace();
             throw e;
         }

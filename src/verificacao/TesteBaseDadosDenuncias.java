@@ -19,7 +19,7 @@ public class TesteBaseDadosDenuncias {
         String cnpjTeste = "12.000.000/0001-01";
         boolean denunciado = baseDenuncias.cnpjDenunciado(cnpjTeste);
 
-        System.err.println("O CNPJ " + cnpjTeste + (denunciado ? " já foi denunciado." : " não foi denunciado."));
+        System.err.println("O CNPJ " + cnpjTeste + (denunciado ? " ja foi denunciado." : " nao foi denunciado."));
         // é pra retornar O CNPJ 12.000.000/0001-01 não foi denunciado.
     }
 }

@@ -29,17 +29,17 @@ public class RepositorioUsuario {
                 try (ResultSet rs = stmt.getGeneratedKeys()) {
                     if (rs.next()) {
                         novoUsuario.setId(rs.getInt(1)); // Define o ID gerado no objeto Usuario
-                        System.out.println("Novo usuário anônimo criado com ID: " + novoUsuario.getId());
+                        System.out.println("Novo usuario anonimo criado com ID: " + novoUsuario.getId());
                     } else {
-                        System.err.println("Falha ao obter o ID gerado para o novo usuário anônimo.");
+                        System.err.println("Falha ao obter o ID gerado para o novo usuario anonimo.");
                     }
                 }
             } else {
-                System.err.println("Falha ao criar novo usuário anônimo: nenhuma linha afetada.");
+                System.err.println("Falha ao criar novo usuario anonimo: nenhuma linha afetada.");
             }
 
         } catch (SQLException e) {
-            System.err.println("Erro ao criar usuário anônimo: " + e.getMessage());
+            System.err.println("Erro ao criar usuario anonimo: " + e.getMessage());
             throw e; // Lançar a exceção para ser tratada na Main
         }
         return novoUsuario;
@@ -65,7 +65,7 @@ public class RepositorioUsuario {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Erro ao buscar usuário por ID: " + e.getMessage());
+            System.err.println("Erro ao buscar usuario por ID: " + e.getMessage());
             throw e;
         }
         return null;

@@ -13,12 +13,12 @@ public class TesteConsultaCNPJ {
 
         String resultado = consulta.validarDadosComApi();
 
-        System.out.println("Resultado da validação: " + resultado);
+        System.out.println("Resultado da validacao: " + resultado);
 
         // deve retornar ✅ Dados da API para CNPJ 00000000000191:
         //   CNPJ da API: 00000000000191
         //   Razão Social da API: banco do brasil sa
         //✅ **CNPJ e Razão Social batem com os dados da API!**
-        //Resultado da validação: VALIDO
+        //Resultado da validacao: VALIDO
     }
 }

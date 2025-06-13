@@ -4,11 +4,11 @@ public class ValidadorLinhaDigitavel {
 
     public static boolean validar(String linha) {
         if (linha == null || linha.length() != 47 || !linha.matches("\\d{47}")) {
-            System.out.println("❌ Linha digitável inválida: Deve ter 47 dígitos numéricos.");
+            System.out.println("Linha digitavel invalida: Deve ter 47 digitos numericos.");
             return false;
         }
 
-        System.out.println("--- 🧾 Resumo de Validação da Linha Digitável ---");
+        System.out.println("--- Resumo de Validacao da Linha Digitavel ---");
 
         // === Campos ===
         String campo1 = linha.substring(0, 9);
@@ -26,21 +26,22 @@ public class ValidadorLinhaDigitavel {
         int dvGeral = Character.getNumericValue(linha.charAt(32));
         int dvGeralCalc = calcularDvGeral(linha);
 
-        // === Impressão do resumo ===
+        /* === Impressão do resumo ===
         System.out.printf("| Campo | DV Informado | DV Calculado | Válido |\n");
         System.out.printf("|-------|---------------|---------------|--------|\n");
         System.out.printf("|  1    | %-13d | %-13d | %s |\n", dv1, dv1Calc, dv1 == dv1Calc ? "✅" : "❌");
         System.out.printf("|  2    | %-13d | %-13d | %s |\n", dv2, dv2Calc, dv2 == dv2Calc ? "✅" : "❌");
         System.out.printf("|  3    | %-13d | %-13d | %s |\n", dv3, dv3Calc, dv3 == dv3Calc ? "✅" : "❌");
         System.out.printf("| Geral | %-13d | %-13d | %s |\n", dvGeral, dvGeralCalc, dvGeral == dvGeralCalc ? "✅" : "❌");
-
+        */
+        
         // === Veredito final ===
         boolean todosValidos = dv1 == dv1Calc && dv2 == dv2Calc && dv3 == dv3Calc && dvGeral == dvGeralCalc;
 
         if (todosValidos) {
-            System.out.println("\n✅ Todos os Dígitos Verificadores estão CORRETOS.");
+            System.out.println("\n Todos os Digitos Verificadores estao CORRETOS.");
         } else {
-            System.out.println("\n❌ A linha digitável contém ERROS nos DVs.");
+            System.out.println("\n A linha digitavel contem ERROS nos DVs.");
         }
 
         return todosValidos;

@@ -68,10 +68,10 @@ public class CalculadoraReputacao {
 
 
                 System.out.println("Total de Boletos: " + totalBoletos);
-                System.out.println("Total de Denúncias: " + totalDenuncias);
-                System.out.printf("Score de Reputação: %.2f%%\n", reputacao);
-                System.out.println("Classificação: " + tipoReputacao);
-                System.out.println("Cálculo de reputação concluído para o CNPJ: " + cnpj);
+                System.out.println("Total de Denuncias: " + totalDenuncias);
+                System.out.printf("Score de Reputacao: %.2f%%\n", reputacao);
+                System.out.println("Classificacao: " + tipoReputacao);
+                System.out.println("Calculo de reputacao concluido para o CNPJ: " + cnpj);
 
 
                 salvarOuAtualizarReputacao(conn, cnpj, reputacao, totalBoletos, totalDenuncias);

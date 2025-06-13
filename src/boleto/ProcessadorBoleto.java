@@ -85,7 +85,7 @@ public class ProcessadorBoleto {
             boletoExtraido.setInformacoesConfirmadasPeloUsuario(usuarioConfirmou);
 
             if (!usuarioConfirmou && !"nao".equalsIgnoreCase(confirmacao)) {
-                System.out.println("Resposta inválida. O boleto sera salvo, mas marcado como nao confirmado pelo usuario.");
+                System.out.println("Resposta invalida. O boleto sera salvo, mas marcado como nao confirmado pelo usuario.");
             } else if (!usuarioConfirmou) {
                 System.out.println("Usuario indicou que as informacoes nao estao corretas. O boleto sera salvo para analise, mas marcado como nao confirmado.");
             } else {
@@ -280,13 +280,13 @@ public class ProcessadorBoleto {
             }
 
         } else {
-            System.out.println("\n Nao foi possível extrair informações essenciais do boleto (código de barras ou CNPJ). Verifique o arquivo.");
+            System.out.println("\n Nao foi possivel extrair informacoes essenciais do boleto (codigo de barras ou CNPJ). Verifique o arquivo.");
         }
     }
 
     private void verificarValorBoleto(String codigoBarras, BigDecimal valorInformado) {
         if (codigoBarras == null || codigoBarras.length() < 10 || valorInformado == null) {
-            System.out.println("⚠️ Não foi possível realizar a verificação do valor do boleto (dados incompletos).");
+            System.out.println("Nao foi possivel realizar a verificacao do valor do boleto (dados incompletos).");
             return;
         }
 
@@ -296,29 +296,29 @@ public class ProcessadorBoleto {
             String valorFormatado = valorStr.substring(0, 8) + "." + valorStr.substring(8, 10);
             valorDoCodigoBarras = new BigDecimal(valorFormatado);
         } catch (NumberFormatException e) {
-            System.err.println("Erro ao extrair valor do código de barras para verificação: " + e.getMessage());
+            System.err.println("Erro ao extrair valor do codigo de barras para verificacao: " + e.getMessage());
         }
 
-        System.out.println("\n--- Verificação do Valor Final ---");
-        System.out.println("Valor informado pelo usuário (sem desconto): " + valorInformado);
-        System.out.println("Valor extraído do código de barras: " + valorDoCodigoBarras);
+        System.out.println("\n--- Verificacao do Valor Final ---");
+        System.out.println("Valor informado pelo usuario (sem desconto): " + valorInformado);
+        System.out.println("Valor extraido do codigo de barras: " + valorDoCodigoBarras);
 
         if (valorInformado.compareTo(valorDoCodigoBarras) == 0) {
-            System.out.println("✅ O valor informado corresponde ao valor no código de barras. Verificação de valor OK.");
+            System.out.println("O valor informado corresponde ao valor no codigo de barras. Verificacao de valor OK.");
         } else {
-            System.out.println("⚠️ ATENÇÃO: O valor informado NÃO corresponde ao valor no código de barras. Isso pode indicar um problema.");
+            System.out.println("ATENCAO: O valor informado NAO corresponde ao valor no codigo de barras. Isso pode indicar um problema.");
         }
     }
 
     private void apagarArquivoTxtGerado() {
         if (arquivoTxtParaApagar != null && arquivoTxtParaApagar.exists()) {
             if (arquivoTxtParaApagar.delete()) {
-                System.out.println("🗑️ Arquivo TXT '" + arquivoTxtParaApagar.getName() + "' apagado com sucesso.");
+                System.out.println("Arquivo TXT '" + arquivoTxtParaApagar.getName() + "' apagado com sucesso.");
             } else {
-                System.err.println("❌ Não foi possível apagar o arquivo TXT '" + arquivoTxtParaApagar.getName() + "'.");
+                System.err.println("Nao foi possivel apagar o arquivo TXT '" + arquivoTxtParaApagar.getName() + "'.");
             }
         } else {
-            System.out.println("ℹ️ Nenhum arquivo TXT para apagar ou arquivo não existe.");
+            System.out.println("Nenhum arquivo TXT para apagar ou arquivo nao existe.");
         }
     }
 
@@ -331,7 +331,7 @@ public class ProcessadorBoleto {
                 checkStmt.setString(1, cnpj);
                 ResultSet rs = checkStmt.executeQuery();
                 if (rs.next() && rs.getInt(1) > 0) {
-                    System.out.println("✅ CNPJ Emitente '" + cnpj + "' já existe na tabela CNPJ_Emitente.");
+                    System.out.println("CNPJ Emitente '" + cnpj + "' ja existe na tabela CNPJ_Emitente.");
                     return;
                 }
             }
@@ -343,9 +343,9 @@ public class ProcessadorBoleto {
 
                 int linhasAfetadas = insertStmt.executeUpdate();
                 if (linhasAfetadas > 0) {
-                    System.out.println("➕ CNPJ Emitente '" + cnpj + "' inserido na tabela CNPJ_Emitente.");
+                    System.out.println("CNPJ Emitente '" + cnpj + "' inserido na tabela CNPJ_Emitente.");
                 } else {
-                    System.err.println("❌ Falha ao inserir CNPJ Emitente '" + cnpj + "' na tabela CNPJ_Emitente.");
+                    System.err.println("Falha ao inserir CNPJ Emitente '" + cnpj + "' na tabela CNPJ_Emitente.");
                 }
             }
         }

@@ -23,7 +23,7 @@ public class ConsultaCNPJ {
      */
     public JSONObject getDadosCnpjDaApi(String cnpj) {
         if (cnpj == null || cnpj.isEmpty()) {
-            System.err.println("❌ CNPJ para consulta API é nulo ou vazio.");
+            System.err.println("CNPJ para consulta nulo.");
             return null;
         }
 
@@ -38,7 +38,7 @@ public class ConsultaCNPJ {
             int status = conexao.getResponseCode();
 
             if (status != 200) {
-                System.err.println("❌ Erro ao consultar API para CNPJ " + cnpj + ". Código HTTP: " + status);
+                System.err.println("Erro ao consultar API para CNPJ " + cnpj + ". Código HTTP: " + status);
                 return null;
             }
 
@@ -65,7 +65,7 @@ public class ConsultaCNPJ {
             return json;
 
         } catch (Exception e) {
-            System.err.println("❌ Erro durante a consulta ou processamento da API para CNPJ " + cnpj + ": " + e.getMessage());
+            System.err.println("Erro durante a consulta ou processamento da API para CNPJ " + cnpj + ": " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -78,14 +78,14 @@ public class ConsultaCNPJ {
      */
     public String validarDadosComApi() {
         if (this.cnpjBoleto == null || this.cnpjBoleto.isEmpty()) {
-            System.err.println("❌ CNPJ do boleto não encontrado. Não é possível validar com a API.");
+            System.err.println("CNPJ do boleto nao encontrado. Nao foi possivel validar com a API.");
             return "CNPJ_AUSENTE"; 
         }
 
         JSONObject dadosApi = getDadosCnpjDaApi(this.cnpjBoleto);
 
         if (dadosApi == null) {
-            System.err.println("❌ Não foi possível obter dados da API para validação ou CNPJ não encontrado na API.");
+            System.err.println("Nao foi possivel obter dados para validacao ou CNPJ nao encontrado.");
             // Define os campos da API como "N/A" para indicar que não foram encontrados
             boleto.setRazaoSocialApi("N/A");
             boleto.setNomeFantasiaApi("N/A");
@@ -106,11 +106,11 @@ public class ConsultaCNPJ {
         // Compara CNPJ para verificar se o que foi pesquisado é o que foi retornado
         String cnpjBoletoNormalizado = this.cnpjBoleto.replaceAll("[^0-9]", "");
         if (!cnpjBoletoNormalizado.equals(cnpjApiRetornado)) {
-            System.err.println("🚫 CNPJ pesquisado (" + cnpjBoletoNormalizado + ") difere do CNPJ retornado pela API (" + cnpjApiRetornado + ").");
+            System.err.println("CNPJ pesquisado (" + cnpjBoletoNormalizado + ") difere do CNPJ retornado pela API (" + cnpjApiRetornado + ").");
             return "CNPJ_DIVERGENTE";
         }
 
-        System.out.println("✅ Dados do CNPJ recebidos da API.");
+        System.out.println("Dados do CNPJ recebidos.");
         return "VALIDO_API"; // Indica que a API retornou dados válidos para o CNPJ
     }
 }

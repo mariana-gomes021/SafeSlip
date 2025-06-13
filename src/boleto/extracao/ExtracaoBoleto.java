@@ -56,7 +56,7 @@ public class ExtracaoBoleto {
     public String transformarPdfToTxt() throws IOException {
         // Verifica se um arquivo PDF foi selecionado antes de tentar processar
         if (this.caminhoToArquivo == null) {
-            System.err.println("❌ **Erro:** Nenhum arquivo PDF definido para extração.");
+            System.err.println("**Erro:** Nenhum arquivo PDF definido para extracao.");
             return null; 
         }
 
@@ -65,7 +65,7 @@ public class ExtracaoBoleto {
 
         // Se o arquivo TXT ainda não existe, extrai o texto do PDF e o salva
         if (!fileTxt.exists()) {
-            System.out.println("⏳ Extraindo texto do PDF...");
+            System.out.println("Extraindo texto do PDF...");
             PDDocument document = Loader.loadPDF(this.caminhoToArquivo); // Carrega o PDF
             PDFTextStripper pdfStripper = new PDFTextStripper(); // Ferramenta para extrair texto
             String text = pdfStripper.getText(document); // Extrai o texto
@@ -76,11 +76,11 @@ public class ExtracaoBoleto {
                 writer.write(text);
             }
 
-            System.out.println("✅ Texto extraído e salvo com sucesso em '" + fileTxt.getAbsolutePath() + "'.");
+            System.out.println("Texto extraido e salvo com sucesso em '" + fileTxt.getAbsolutePath() + "'.");
             return text; // Retorna o texto extraído
         } else {
             // Se o arquivo TXT já existe, apenas lê seu conteúdo
-            System.out.println("ℹ️ Texto já extraído e salvo em '" + fileTxt.getAbsolutePath() + "'. Lendo conteúdo existente.");
+            System.out.println("Texto ja extraido e salvo em '" + fileTxt.getAbsolutePath() + "'. Lendo conteudo existente.");
             try (Scanner fileScanner = new Scanner(fileTxt, "UTF-8")) { // Usar UTF-8 para evitar problemas de codificação
                 // Usa um delimitador que significa "fim do input" para ler todo o arquivo de uma vez
                 return fileScanner.useDelimiter("\\A").next(); 
@@ -103,7 +103,7 @@ public class ExtracaoBoleto {
             texto = texto.replaceAll("\\s+", " ").trim(); // Normaliza espaços em branco
 
             System.out.println("===================================");
-            System.out.println("\nExtraindo informações do boleto:\n");
+            System.out.println("\n Extraindo informacoes do boleto:\n");
 
             // Lógica de extração para boletos Cecred/Bradesco
             if (texto.trim().startsWith("BENEFICI")) {
@@ -123,7 +123,7 @@ public class ExtracaoBoleto {
                     if (bancoEmissorStr != null) boleto.setBancoEmissor(bancoEmissorStr);
                     if (codigoBarrasStr != null) boleto.setCodigoBarras(codigoBarrasStr.replaceAll("[^0-9]", "")); // Apenas dígitos
                 } catch (NumberFormatException | DateTimeParseException e) {
-                    System.err.println("❌ **Erro ao parsear dados para o boleto (Cecred/Bradesco):** " + e.getMessage());
+                    System.err.println("**Erro ao parsear dados para o boleto (Cecred/Bradesco):** " + e.getMessage());
                 }
             }
             // Lógica de extração para boletos Anhembi (ou outros formatos que você adicionar)
@@ -143,10 +143,10 @@ public class ExtracaoBoleto {
                     if (bancoEmissorStr != null) boleto.setBancoEmissor(bancoEmissorStr);
                     if (codigoBarrasStr != null) boleto.setCodigoBarras(codigoBarrasStr.replaceAll("[^0-9]", ""));
                 } catch (NumberFormatException | DateTimeParseException e) {
-                    System.err.println("❌ **Erro ao parsear dados para o boleto (Anhembi):** " + e.getMessage());
+                    System.err.println("**Erro ao parsear dados para o boleto (Anhembi):** " + e.getMessage());
                 }
             } else {
-                System.out.println("⚠️ **Formato de boleto não reconhecido.** Extração pode ser incompleta.");
+                System.out.println("**Formato de boleto nao reconhecido.** Extracao pode ser incompleta.");
             }
         }
         return boleto;

@@ -24,7 +24,7 @@ public class ConsultaBanco {
             this.codigoBancoExtraidoDoBoleto = boleto.getCodigoBarras().substring(0, 3).trim();
         } else {
             this.codigoBancoExtraidoDoBoleto = null;
-            System.err.println("⚠️ Não foi possível extrair o código do banco do boleto. Código de barras inválido ou ausente.");
+            System.err.println("Nao foi possivel extrair o codigo do banco do boleto. Codigo de barras invalido ou ausente.");
         }
         // O nomeBancoBoleto não é mais necessário para a validação automática,
         // pois a validação de nome será feita pela confirmação do usuário no ProcessadorLinhaDigitavel.
@@ -42,7 +42,7 @@ public class ConsultaBanco {
      */
     private JSONObject getDadosBancoDaApi(String codigoBanco) {
         if (codigoBanco == null || codigoBanco.trim().isEmpty()) {
-            System.err.println("❌ Código do banco para consulta API é nulo ou vazio.");
+            System.err.println("Codigo do banco para consulta API nulo.");
             return null;
         }
 
@@ -60,17 +60,17 @@ public class ConsultaBanco {
             int status = conexao.getResponseCode();
 
             if (status == 404) {
-                System.err.println("⚠️ Banco com código '" + codigoBanco + "' não encontrado na BrasilAPI (código HTTP 404).");
+                System.err.println("Banco com codigo '" + codigoBanco + "' nao encontrado.");
                 return null;
             } else if (status != 200) {
-                System.err.println("❌ Erro ao consultar API BrasilAPI para banco " + codigoBanco + ". Código HTTP: " + status);
+                System.err.println("Erro ao consultar " + codigoBanco + ". Código HTTP: " + status);
                 try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(conexao.getErrorStream()))) {
                     StringBuilder erroResposta = new StringBuilder();
                     String linhaErro;
                     while ((linhaErro = errorReader.readLine()) != null) {
                         erroResposta.append(linhaErro);
                     }
-                    System.err.println("   Detalhe do erro: " + erroResposta.toString());
+                    System.err.println("Detalhe do erro: " + erroResposta.toString());
                 } catch (Exception e) {
                     // Ignorar se não conseguir ler o corpo do erro
                 }
@@ -91,20 +91,20 @@ public class ConsultaBanco {
             JSONObject json = new JSONObject(resposta.toString());
 
             if (json.has("message") && json.getString("message").toLowerCase().contains("não encontrado")) {
-                System.err.println("⚠️ Banco com código '" + codigoBanco + "' não encontrado na BrasilAPI (mensagem no corpo).");
+                System.err.println("Banco com codigo '" + codigoBanco + "' nao encontrado.");
                 return null;
             }
             // Não imprimir aqui, vamos imprimir no ProcessadorLinhaDigitavel para confirmação do usuário.
             return json;
 
         } catch (java.net.SocketTimeoutException e) {
-            System.err.println("❌ Timeout ao conectar/ler da API BrasilAPI para banco " + codigoBanco + ": " + e.getMessage());
+            System.err.println("Timeout ao conectar/ler da API BrasilAPI para banco " + codigoBanco + ": " + e.getMessage());
             return null;
         } catch (org.json.JSONException e) {
-            System.err.println("❌ Erro ao processar JSON da API para banco " + codigoBanco + ": " + e.getMessage());
+            System.err.println("Erro ao processar JSON da API para banco " + codigoBanco + ": " + e.getMessage());
             return null;
         } catch (Exception e) {
-            System.err.println("❌ Erro inesperado durante a consulta ou processamento da API para banco " + codigoBanco + ": " + e.getMessage());
+            System.err.println("Erro inesperado durante a consulta ou processamento da API para banco " + codigoBanco + ": " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -118,7 +118,7 @@ public class ConsultaBanco {
      */
     public String validarBancoComApi() {
         if (this.codigoBancoExtraidoDoBoleto == null || this.codigoBancoExtraidoDoBoleto.isEmpty()) {
-            System.err.println("❌ Código do banco do boleto não encontrado. Não é possível validar com a API.");
+            System.err.println("Codigo do banco do boleto nao encontrado. Nao foi possivel validar.");
             // Define os campos da API como "N/A" para indicar que não foram encontrados
             boleto.setNomeBancoApi("N/A");
             boleto.setNomeCompletoBancoApi("N/A");
@@ -129,7 +129,7 @@ public class ConsultaBanco {
         JSONObject dadosApi = getDadosBancoDaApi(this.codigoBancoExtraidoDoBoleto);
 
         if (dadosApi == null) {
-            System.err.println("❌ Não foi possível obter dados do banco da API para validação ou banco não encontrado.");
+            System.err.println("Nao foi possivel obter dados do banco da API para validacao ou banco nao encontrado.");
             // Define os campos da API como "N/A" para indicar que não foram encontrados
             boleto.setNomeBancoApi("N/A");
             boleto.setNomeCompletoBancoApi("N/A");
@@ -160,11 +160,11 @@ public class ConsultaBanco {
 
         // Compara o código do banco
         if (code == null || !this.codigoBancoExtraidoDoBoleto.equals(code)) {
-            System.err.println("🚫 Código do banco do boleto (" + this.codigoBancoExtraidoDoBoleto + ") difere do código retornado pela API (" + (code != null ? code : "N/A") + ").");
+            System.err.println("Codigo do banco do boleto (" + this.codigoBancoExtraidoDoBoleto + ") difere do codigo retornado pela API (" + (code != null ? code : "N/A") + ").");
             return "CODIGO_DIVERGENTE";
         }
         
-        System.out.println("✅ Dados do Banco recebidos da API.");
+        System.out.println("Dados do Banco recebidos.");
         return "VALIDO_API"; // Indica que a API retornou dados válidos para o código do banco
     }
 }

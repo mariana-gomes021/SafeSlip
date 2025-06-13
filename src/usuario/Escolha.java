@@ -38,7 +38,7 @@ public class Escolha {
                 ProcessadorLinhaDigitavel processadorLinhaDigitavel = new ProcessadorLinhaDigitavel(scanner);
                 processadorLinhaDigitavel.processar();
                 scanner.close(); // Fechar o scanner também para esta opção
-                System.out.println("\n Processamento da linha digital concluido. SafeSlip encerrado.");
+                System.out.println("\n Processamento da linha digitavel concluido. SafeSlip encerrado.");
                 break;
             default:
                 System.out.println("Opcao invalida. Por favor, digite 'pdf' ou 'linha digital'.");

@@ -1,5 +1,6 @@
 package safeslip;
 
+import java.sql.SQLException;
 import java.util.Scanner;
 import usuario.Escolha;
 
@@ -15,7 +16,13 @@ public class SafeSlip {
 
         Escolha escolha = new Escolha();
         escolha.setResposta(entrada, scanner);
-        escolha.escolha(); // <- ESSENCIAL
+        try {
+            escolha.escolha(); // <- ESSENCIAL
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
 
     }
 }
+
+
