@@ -1,117 +1,72 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package verificacao;
 
-import bancodedados.ConexaoBD;
+import usuario.Boleto;
+import bancodedados.RepositorioCnpjReputacao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 
-/**
- * Classe responsável por calcular a reputação de um CNPJ com base
- * nos boletos emitidos e nas denúncias registradas.
- * @author Luara Lima
- */
 public class CalculadoraReputacao {
-    //Calculadora de reputação do Boleto
-    private final ConexaoBD conexao;
 
-    public CalculadoraReputacao(ConexaoBD conexao) {
-        this.conexao = conexao;
-    }
+    // O método calcularEAtualizarReputacao agora é estático e recebe o repositorio como parâmetro
+    public static void calcularEAtualizarReputacao(Boleto boleto, boolean isBoletoFalhoParaReputacao, RepositorioCnpjReputacao repositorioCnpjReputacao) throws SQLException {
+        String cnpj = boleto.getCnpjEmitente();
+        if (cnpj == null || cnpj.isEmpty()) {
+            System.err.println("Erro: CNPJ do boleto é nulo ou vazio para calculo de reputacao.");
+            return;
+        }
 
-    /**
-     * Calcula a reputação do CNPJ com base em:
-     * - total de boletos emitidos
-     * - total de denúncias recebidas
-     * Também salva ou atualiza os dados na tabela `CNPJ_Reputacao`.
-     *
-     * @param cnpj CNPJ do emitente
-     */
-    public void calcularReputacao(String cnpj) {
-        String sql = """
-                   select count(DISTINCT b.id) as total_boletos,
-                   count(DISTINCT b.id) as total_denuncias
-                   from Boleto b
-                   left join Denuncia d on b.id = d.boleto_id
-                   where b.cnpj_emitente = ?
-                """;
+        try {
+            // Primeiro, atualiza o total de boletos e denuncias no repositório
+            // O isBoletoFalhoParaReputacao indica se este boleto específico contribui como uma "denúncia"
+            repositorioCnpjReputacao.atualizarReputacaoCnpj(cnpj, isBoletoFalhoParaReputacao, boleto.getTotalAtualizacoes());
 
-        try (Connection conn = ConexaoBD.getConexao(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, cnpj);
-            ResultSet rs = stmt.executeQuery();
+            // Em seguida, busca os dados de reputação atualizados para calcular o score e exibir
+            Object[] reputacaoAtual = repositorioCnpjReputacao.buscarReputacaoCnpj(cnpj);
+            if (reputacaoAtual != null) {
+                BigDecimal score = (BigDecimal) reputacaoAtual[0];
+                int totalBoletosCnpj = (int) reputacaoAtual[1];
+                int totalDenunciasCnpj = (int) reputacaoAtual[2];
 
-            if (rs.next()) {
-                int totalBoletos = rs.getInt("total_boletos");
-                int totalDenuncias = rs.getInt("total_denuncias");
+                // Atualiza o objeto Boleto com os dados da reputação
+                boleto.setScoreReputacaoCnpj(score);
+                boleto.setTotalBoletosCnpj(totalBoletosCnpj);
+                boleto.setTotalDenunciasCnpj(totalDenunciasCnpj);
 
-                double reputacao = totalBoletos == 0
-                        ? 100.0
-                        : (1 - ((double) totalDenuncias / totalBoletos)) * 100.0;
-
-                String tipoReputacao;
-                if (reputacao == 0) {
-                    tipoReputacao = "Reincidente";
-                    System.out.println("⚠ Este CNPJ possui muitas denúncias anteriores. Risco elevado.");
-                } else if (reputacao < 50) {
-                    tipoReputacao = "Problemático";
-                    System.out.println("⚠ Este CNPJ possui muitas denúncias anteriores. Risco elevado.");
-                } else if (reputacao <= 80) {
-                    tipoReputacao = "Risco Moderado";
+                String classificacao;
+                if (score.compareTo(new BigDecimal("80.00")) > 0) {
+                    classificacao = "Confiável";
+                } else if (score.compareTo(new BigDecimal("50.00")) >= 0 && score.compareTo(new BigDecimal("80.00")) <= 0) {
+                    classificacao = "Risco Moderado";
                 } else {
-                    tipoReputacao = "Confiável";
+                    classificacao = (score.compareTo(BigDecimal.ZERO) == 0) ? "Reincidente" : "Problemático";
+                    System.out.println("\nEste CNPJ possui muitas denuncias anteriores. Risco elevado.");
                 }
 
+                System.out.println("Total de Boletos (CNPJ): " + totalBoletosCnpj);
+                System.out.println("Total de Denuncias (CNPJ): " + totalDenunciasCnpj);
+                System.out.printf("Score de Reputacao (CNPJ): %.2f%%\n", score);
+                System.out.println("Classificacao (CNPJ): " + classificacao);
+                System.out.println("Calculo de reputacao concluido para o CNPJ: " + cnpj); // Usar 'cnpj' diretamente
 
-                System.out.println("Total de Boletos: " + totalBoletos);
-                System.out.println("Total de Denuncias: " + totalDenuncias);
-                System.out.printf("Score de Reputacao: %.2f%%\n", reputacao);
-                System.out.println("Classificacao: " + tipoReputacao);
-                System.out.println("Calculo de reputacao concluido para o CNPJ: " + cnpj);
-
-
-                salvarOuAtualizarReputacao(conn, cnpj, reputacao, totalBoletos, totalDenuncias);
+                if ((classificacao.equals("Reincidente") || classificacao.equals("Problemático")) && totalDenunciasCnpj >= 10) {
+                    boleto.setSuspeito(true);
+                    System.out.println("Boleto de CNPJ classificado como '" + classificacao + "' e com " + totalDenunciasCnpj + " denuncias. Marcado como SUSPEITO automaticamente!");
+                    // Se a reputação for muito baixa, pode sobrepor um status de "VÁLIDO_COMPLETO" para "ALERTA_GERAL_NAO_CONFORMIDADE"
+                    if ("VALIDO_COMPLETO".equals(boleto.getStatusValidacao())) {
+                        boleto.setStatusValidacao("ALERTA_GERAL_NAO_CONFORMIDADE");
+                    }
+                }
             } else {
-                System.out.println("Nenhum boleto encontrado para o CNPJ: " + cnpj);
+                System.out.println("Não foi possível buscar a reputação do CNPJ. Pode ser um novo CNPJ.");
+                // Para um CNPJ novo, podemos definir um score inicial para o boleto
+                boleto.setScoreReputacaoCnpj(new BigDecimal("100.00"));
+                boleto.setTotalBoletosCnpj(1); // Se é um novo, este é o primeiro
+                boleto.setTotalDenunciasCnpj(isBoletoFalhoParaReputacao ? 1 : 0);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Erro ao processar reputacao do CNPJ: " + e.getMessage());
+            throw e; // Re-lança a exceção para que ProcessadorBoleto possa capturá-la
         }
     }
-
-    /**
-     * Salva ou atualiza a reputação do CNPJ na tabela `CNPJ_Reputacao`.
-     *
-     * @param conn           Conexão ativa com o banco de dados
-     * @param cnpj           CNPJ do emitente
-     * @param reputacao      Score de reputação
-     * @param totalBoletos   Total de boletos emitidos
-     * @param totalDenuncias Total de denúncias
-     * @throws SQLException se ocorrer erro na execução do SQL
-     */
-    private void salvarOuAtualizarReputacao(Connection conn, String cnpj, double reputacao, int totalBoletos, int totalDenuncias) throws SQLException {
-        String updateSql = """
-                    INSERT INTO CNPJ_Reputacao (cnpj, score_reputacao, total_boletos, total_denuncias)
-                    VALUES (?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE
-                        score_reputacao = VALUES(score_reputacao),
-                        total_boletos = VALUES(total_boletos),
-                        total_denuncias = VALUES(total_denuncias),
-                        ultima_atualizacao = CURRENT_TIMESTAMP
-                """;
-
-        try (PreparedStatement stmt = conn.prepareStatement(updateSql)) {
-            stmt.setString(1, cnpj);
-            stmt.setDouble(2, reputacao);
-            stmt.setInt(3, totalBoletos);
-            stmt.setInt(4, totalDenuncias);
-            stmt.executeUpdate();
-        }
-    }
-
-
 }
