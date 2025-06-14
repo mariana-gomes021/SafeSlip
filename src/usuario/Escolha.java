@@ -24,7 +24,7 @@ public class Escolha {
                 try {
                     processador.processarNovoBoleto();
                 } catch (IOException e) {
-                    System.err.println("Erro de I/O durante o processamento: " + e.getMessage());
+                    System.err.println("Erro de E/S durante o processamento: " + e.getMessage());
                     e.printStackTrace();
                 } catch (SQLException e) {
                     System.err.println("Erro de banco de dados durante o processamento: " + e.getMessage());
@@ -37,7 +37,7 @@ public class Escolha {
             case "linha digitavel":
                 ProcessadorLinhaDigitavel processadorLinhaDigitavel = new ProcessadorLinhaDigitavel(scanner);
                 processadorLinhaDigitavel.processar();
-                scanner.close(); // Fechar o scanner também para esta opção
+                //scanner.close(); // Fechar o scanner também para esta opção
                 System.out.println("\n Processamento da linha digitavel concluido. SafeSlip encerrado.");
                 break;
             default:

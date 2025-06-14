@@ -1,14 +1,25 @@
 package boleto;
 
+import java.math.BigDecimal;
+import usuario.Boleto; // Importar Boleto se for usar (neste caso, é usado no validarValor)
+
 public class ValidadorLinhaDigitavel {
 
+    /**
+     * Valida a estrutura básica da linha digitável (47 dígitos e apenas números)
+     * e também os dígitos verificadores (DVs) dos campos e o DV geral.
+     * Esta é a Verificação 1.
+     *
+     * @param linha A linha digitável limpa (somente números).
+     * @return true se o formato básico e todos os DVs estiverem corretos, false caso contrário.
+     */
     public static boolean validar(String linha) {
         if (linha == null || linha.length() != 47 || !linha.matches("\\d{47}")) {
-            System.out.println("Linha digitavel invalida: Deve ter 47 digitos numericos.");
+            System.err.println("Erro: A linha digitavel deve conter 47 digitos numericos.");
             return false;
         }
 
-        System.out.println("--- Resumo de Validacao da Linha Digitavel ---");
+        System.out.println("--- Resumo de Validacao dos Digitos Verificadores da Linha Digitavel ---");
 
         // === Campos ===
         String campo1 = linha.substring(0, 9);
@@ -26,25 +37,62 @@ public class ValidadorLinhaDigitavel {
         int dvGeral = Character.getNumericValue(linha.charAt(32));
         int dvGeralCalc = calcularDvGeral(linha);
 
-        /* === Impressão do resumo ===
-        System.out.printf("| Campo | DV Informado | DV Calculado | Válido |\n");
-        System.out.printf("|-------|---------------|---------------|--------|\n");
-        System.out.printf("|  1    | %-13d | %-13d | %s |\n", dv1, dv1Calc, dv1 == dv1Calc ? "✅" : "❌");
-        System.out.printf("|  2    | %-13d | %-13d | %s |\n", dv2, dv2Calc, dv2 == dv2Calc ? "✅" : "❌");
-        System.out.printf("|  3    | %-13d | %-13d | %s |\n", dv3, dv3Calc, dv3 == dv3Calc ? "✅" : "❌");
-        System.out.printf("| Geral | %-13d | %-13d | %s |\n", dvGeral, dvGeralCalc, dvGeral == dvGeralCalc ? "✅" : "❌");
-        */
-        
         // === Veredito final ===
         boolean todosValidos = dv1 == dv1Calc && dv2 == dv2Calc && dv3 == dv3Calc && dvGeral == dvGeralCalc;
 
         if (todosValidos) {
-            System.out.println("\n Todos os Digitos Verificadores estao CORRETOS.");
+            System.out.println("Todos os Digitos Verificadores estao CORRETOS.");
         } else {
-            System.out.println("\n A linha digitavel contem ERROS nos DVs.");
+            System.out.println("A linha digitavel contem ERROS nos Digitos Verificadores.");
+            // System.out.printf("| Campo | DV Informado | DV Calculado | Válido |\n");
+            // System.out.printf("|-------|---------------|---------------|--------|\n");
+            // System.out.printf("|   1   | %-13d | %-13d | %s |\n", dv1, dv1Calc, dv1 == dv1Calc ? "✅" : "❌");
+            // System.out.printf("|   2   | %-13d | %-13d | %s |\n", dv2, dv2Calc, dv2 == dv2Calc ? "✅" : "❌");
+            // System.out.printf("|   3   | %-13d | %-13d | %s |\n", dv3, dv3Calc, dv3 == dv3Calc ? "✅" : "❌");
+            // System.out.printf("| Geral | %-13d | %-13d | %s |\n", dvGeral, dvGeralCalc, dvGeral == dvGeralCalc ? "✅" : "❌");
         }
 
         return todosValidos;
+    }
+
+    /**
+     * Compara o valor informado pelo usuário com o valor extraído da linha digitável.
+     * Esta é a Verificação 2.
+     *
+     * @param valorInformadoPeloUsuario O valor do boleto informado pelo usuário.
+     * @param linhaDigital A linha digitável limpa (somente números).
+     * @return true se os valores coincidirem, false caso contrário.
+     */
+    public static boolean validarValor(BigDecimal valorInformadoPeloUsuario, String linhaDigital) {
+        BigDecimal valorDoCodigoBarras = BigDecimal.ZERO; // Valor padrão em caso de erro
+
+        if (linhaDigital == null || linhaDigital.length() < 10) {
+            System.err.println("Erro: Linha digitavel muito curta para extrair o valor.");
+            return false;
+        }
+
+        try {
+            // Os últimos 10 dígitos da linha digitável representam o valor (8 inteiros + 2 decimais)
+            String valorStr = linhaDigital.substring(linhaDigital.length() - 10);
+            String valorFormatado = valorStr.substring(0, 8) + "." + valorStr.substring(8, 10);
+            valorDoCodigoBarras = new BigDecimal(valorFormatado);
+        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            System.err.println("Erro ao extrair valor do codigo de barras da linha digitavel: " + e.getMessage());
+            return false;
+        }
+
+        System.out.println("\n--- Verificacao do Valor Final ---");
+        System.out.println("Valor informado pelo usuario: " + valorInformadoPeloUsuario);
+        System.out.println("Valor extraido da linha digitavel: " + valorDoCodigoBarras);
+
+        // Compara os valores
+        if (valorInformadoPeloUsuario.compareTo(valorDoCodigoBarras) == 0) {
+            System.out.println(" O valor informado corresponde ao valor na linha digitavel. Verificacao de valor OK.");
+            return true;
+        } else {
+            System.out.println("ATENCAO: O valor informado NAO corresponde ao valor na linha digitavel. Isso pode indicar um problema.");
+            return false;
+        }
     }
 
     private static int calcularModulo10(String num) {

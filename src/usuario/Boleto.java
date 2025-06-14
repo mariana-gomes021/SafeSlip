@@ -14,6 +14,7 @@ public class Boleto {
     private String codigoBarras;
     private LocalDateTime dataExtracao;
     private String statusValidacao; // Ex: VALIDO, INVALIDO, ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE, etc.
+    private String statusValidacaoCnpj;
     private String statusValidacaoBanco; // Ex: VALIDO_API, ERRO_API, BANCO_NAO_CONFIRMADO_USUARIO
     private boolean informacoesConfirmadasPeloUsuario;
     private int usuarioId; // ID do usuário que processou o boleto
@@ -29,15 +30,16 @@ public class Boleto {
     private String nomeBancoApi;
     private String nomeCompletoBancoApi;
     private String ispbBancoApi;
+    private String codigoBancoApi;
 
-    // Campos para a Reputação do CNPJ (não são persistidos no Boleto, mas são preenchidos para exibição/lógica)
+    // Campos para a Reputação do CNPJ (não são persistidos no Boleto, mas são
+    // preenchidos para exibição/lógica)
     private BigDecimal scoreReputacaoCnpj;
     private int totalBoletosCnpj;
     private int totalDenunciasCnpj;
 
     // NOVO CAMPO: Contador de atualizações para o boleto específico (lido do banco)
     private int totalAtualizacoes;
-
 
     // Construtor vazio
     public Boleto() {
@@ -58,7 +60,7 @@ public class Boleto {
     public void setValor(BigDecimal valor) { // Aceita BigDecimal
         this.valor = valor != null ? valor.toPlainString() : null; // Converte para String
     }
-    
+
     // Método para obter o valor como BigDecimal (útil para cálculos)
     public BigDecimal getValorAsBigDecimal() {
         try {
@@ -67,7 +69,6 @@ public class Boleto {
             return BigDecimal.ZERO; // Retorna zero ou lança exceção, dependendo da sua regra de negócio
         }
     }
-
 
     public LocalDate getVencimento() {
         return vencimento;
@@ -123,6 +124,14 @@ public class Boleto {
 
     public void setStatusValidacao(String statusValidacao) {
         this.statusValidacao = statusValidacao;
+    }
+
+    public String getStatusValidacaoCnpj() {
+        return statusValidacaoCnpj;
+    }
+
+    public void setStatusValidacaoCnpj(String statusValidacaoCnpj) {
+        this.statusValidacaoCnpj = statusValidacaoCnpj;
     }
 
     public String getStatusValidacaoBanco() {
@@ -243,5 +252,13 @@ public class Boleto {
 
     public void setTotalAtualizacoes(int totalAtualizacoes) { // NOVO SETTER
         this.totalAtualizacoes = totalAtualizacoes;
+    }
+
+    public String getCodigoBancoApi() { // <--- Adicione este getter
+        return codigoBancoApi;
+    }
+
+    public void setCodigoBancoApi(String codigoBancoApi) { // <--- Adicione este setter
+        this.codigoBancoApi = codigoBancoApi;
     }
 }
