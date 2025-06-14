@@ -166,31 +166,32 @@ public class ProcessadorLinhaDigitavel {
             // Para boletos via linha digitável, o nome do beneficiário (nomePdf)
             // é o que o usuário *espera* ou o nome extraído de alguma outra fonte
             // que não seja o PDF. Se não for preenchido, a comparação será informativa.
-            String nomePdf = boleto.getNomeBeneficiario(); // Manterá o valor original ou será nulo/vazio
-            String razaoApi = boleto.getRazaoSocialApi();
+            // String nomePdf = boleto.getNomeBeneficiario(); // Manterá o valor original ou será nulo/vazio
+            // String razaoApi = boleto.getRazaoSocialApi();
 
-            if (nomePdf != null && !nomePdf.isEmpty() && razaoApi != null && !razaoApi.isEmpty()) {
-                String nomePdfLimpo = nomePdf.toLowerCase().replaceAll("\\s+", "");
-                String razaoApiLimpa = razaoApi.toLowerCase().replaceAll("\\s+", "");
+            // if (nomePdf != null && !nomePdf.isEmpty() && razaoApi != null && !razaoApi.isEmpty()) {
+            //     String nomePdfLimpo = nomePdf.toLowerCase().replaceAll("\\s+", "");
+            //     String razaoApiLimpa = razaoApi.toLowerCase().replaceAll("\\s+", "");
 
-                if (!nomePdfLimpo.equals(razaoApiLimpa) && !nomePdfLimpo.contains(razaoApiLimpa)
-                        && !razaoApiLimpa.contains(nomePdfLimpo)) {
-                    System.out.println("**ALERTA DE FRAUDE POTENCIAL:** Nome do beneficiario informado ('"
-                            + boleto.getNomeBeneficiario() +
-                            "') DIVERGE da Razao Social da API ('" + boleto.getRazaoSocialApi()
-                            + "') para este CNPJ.");
-                    boleto.setStatusValidacao("ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE");
-                    verificacoesComFalha++;
-                } else {
-                    System.out.println("O nome do beneficiario informado ('" + boleto.getNomeBeneficiario() +
-                            "') BATE com a Razao Social da API ('" + boleto.getRazaoSocialApi() + "').");
-                }
-            } else {
-                System.out.println(
-                        "Nao foi possivel comparar o nome do beneficiario com a Razao Social da API (dados ausentes ou não disponiveis).");
-            }
+            //     if (!nomePdfLimpo.equals(razaoApiLimpa) && !nomePdfLimpo.contains(razaoApiLimpa)
+            //             && !razaoApiLimpa.contains(nomePdfLimpo)) {
+            //         System.out.println("**ALERTA DE FRAUDE POTENCIAL:** Nome do beneficiario informado ('"
+            //                 + boleto.getNomeBeneficiario() +
+            //                 "') DIVERGE da Razao Social da API ('" + boleto.getRazaoSocialApi()
+            //                 + "') para este CNPJ.");
+            //         boleto.setStatusValidacao("ALERTA_FRAUDE_NOME_CNPJ_DIVERGENTE");
+            //         verificacoesComFalha++;
+            //     } else {
+            //         System.out.println("O nome do beneficiario informado ('" + boleto.getNomeBeneficiario() +
+            //                 "') BATE com a Razao Social da API ('" + boleto.getRazaoSocialApi() + "').");
+            //     }
+            // } else {
+            //     System.out.println(
+            //             "Nao foi possivel comparar o nome do beneficiario com a Razao Social da API (dados ausentes ou não disponiveis).");
+            // }
 
 
+            scanner.nextLine();
             System.out.println("\n As informacoes do CNPJ acima estao corretas? (sim/nao)");
             String confirmacaoDadosCnpj = scanner.nextLine().trim().toLowerCase();
 

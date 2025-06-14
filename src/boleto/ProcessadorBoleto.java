@@ -45,7 +45,7 @@ public class ProcessadorBoleto {
     }
 
     public void processarNovoBoleto() throws IOException, SQLException {
-        System.out.println("\n Abrindo a janela de seleaoo de arquivo. Por favor, selecione o boleto em PDF.");
+        System.out.println("\n Abrindo a janela de selecao de arquivo. Por favor, selecione o boleto em PDF.");
         
         File pdfSelecionado = envioBoleto.selecionarArquivoPDF();
         if (pdfSelecionado == null) {
