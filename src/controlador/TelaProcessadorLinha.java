@@ -252,7 +252,7 @@ public class TelaProcessadorLinha extends JPanel {
         sb.append("Código do Banco: ").append(boleto.getBancoEmissor() != null ? boleto.getBancoEmissor() : "N/A").append("\n");
         sb.append("Nome do Banco: ").append(boleto.getNomeBancoApi() != null ? boleto.getNomeBancoApi() : "N/A").append("\n");
         sb.append("Nome Completo Banco: ").append(boleto.getNomeCompletoBancoApi() != null ? boleto.getNomeCompletoBancoApi() : "N/A").append("\n");
-        sb.append("ISPB (API): ").append(boleto.getIspbBancoApi() != null ? boleto.getIspbBancoApi() : "N/A").append("\n");
+      
 
 
         sb.append("\n--- STATUS GERAL DA VALIDAÇÃO ---\n");
@@ -262,9 +262,7 @@ public class TelaProcessadorLinha extends JPanel {
         } else {
             sb.append("Validação da Linha Digitável: ").append("VÁLIDA").append("\n");
         }
-        sb.append("Status Geral Final do Boleto: ").append(boleto.getStatusValidacao()).append("\n");
-        sb.append("Status CNPJ: ").append(boleto.getStatusValidacaoCnpj()).append("\n");
-        sb.append("Status Banco: ").append(boleto.getStatusValidacaoBanco()).append("\n");
+       
         
 
         // --- DETALHES DE ALERTAS/FALHAS ENCONTRADAS ---
@@ -313,7 +311,7 @@ public class TelaProcessadorLinha extends JPanel {
         sb.append(String.format("Score de Reputação: %.2f%%\n", boleto.getScoreReputacaoCnpj()));
         sb.append("Classificação: ").append(boleto.getClassificacaoReputacao() != null ? boleto.getClassificacaoReputacao() : "N/A").append("\n");
         sb.append("Total de Boletos (CNPJ): ").append(boleto.getTotalBoletosCnpj()).append("\n");
-        sb.append("Total de Denúncias (CNPJ): ").append(boleto.getTotalDenunciasCnpj()).append("\n");
+        sb.append("Total de Suspeitas (CNPJ): ").append(boleto.getTotalDenunciasCnpj()).append("\n");
         
         // --- Linha "Boleto Considerado Suspeito" formatada ---
         sb.append("Boleto Considerado Suspeito: ");
