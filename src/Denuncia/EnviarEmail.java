@@ -71,10 +71,10 @@ public class EnviarEmail {
             mensagem.setText(corpo);
 
             Transport.send(mensagem);
-            System.out.println("E-mail enviado com sucesso");
+            System.out.println("E-mail enviado com sucesso para " + destinatario + " sobre o CNPJ " + cnpj + " com " + totalSuspeitas + " suspeitas.");
 
         } catch (MessagingException ex) {
-            System.err.println("Erro ao enviar e-mail: " + ex.getMessage());
+            System.err.println("Erro ao enviar e-mail para " + destinatario + ": " + ex.getMessage());
             ex.printStackTrace();
         }
     }

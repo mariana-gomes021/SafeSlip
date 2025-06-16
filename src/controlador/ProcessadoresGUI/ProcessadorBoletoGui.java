@@ -5,6 +5,7 @@
 package controlador.ProcessadoresGUI;
 
 import controlador.ProcessadoresGUI.ProcessamentoCancelado;
+import Denuncia.Denuncia; 
 import usuario.Boleto; // Importe sua classe Boleto
 import usuario.Usuario; // Importe sua classe Usuario
 import bancodedados.RepositorioBoleto;
@@ -234,6 +235,11 @@ public class ProcessadorBoletoGui {
             boletoExtraido.addDetalheFalha("Falha: Erro ao processar reputação do CNPJ: " + ex.getMessage());
             verificacoesComFalha++;
             throw ex; // Ainda lança a exceção de SQL para tratamento da camada superior
+        }
+
+        if (boletoExtraido.getCnpjEmitente() != null && !boletoExtraido.getCnpjEmitente().isEmpty()) {
+            Denuncia denuncia = new Denuncia();
+            denuncia.validarTotalSuspeitas();
         }
 
         // 10. Criação de Usuário Anônimo e Salvamento

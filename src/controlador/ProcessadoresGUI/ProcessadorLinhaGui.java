@@ -1,6 +1,7 @@
 package controlador.ProcessadoresGUI;
 
 import usuario.Boleto;
+import Denuncia.Denuncia; 
 import boleto.ValidadorLinhaDigitavel;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -248,6 +249,11 @@ public class ProcessadorLinhaGui {
         } catch (SQLException e) {
             System.err.println("Erro ao processar reputação do CNPJ: " + e.getMessage());
             // Não relança a exceção aqui para não impedir o salvamento do boleto
+        }
+
+        if (boleto.getCnpjEmitente() != null && !boleto.getCnpjEmitente().isEmpty()) {
+            Denuncia denuncia = new Denuncia();
+            denuncia.validarTotalSuspeitas();
         }
 
         // Associa o boleto a um usuário anônimo antes de salvar

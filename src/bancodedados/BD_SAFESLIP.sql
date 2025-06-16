@@ -134,3 +134,5 @@ ALTER TABLE Boleto DROP COLUMN nome_cnpj_receita;
 ALTER TABLE Boleto ADD COLUMN total_atualizacoes INT DEFAULT 0;
 ALTER TABLE Boleto CHANGE COLUMN denunciado suspeito BOOLEAN DEFAULT FALSE;
 ALTER TABLE CNPJ_Reputacao CHANGE COLUMN total_denuncias total_suspeitas BOOLEAN DEFAULT FALSE;
+ALTER TABLE CNPJ_Reputacao
+ADD COLUMN ultimo_email_enviado_em_suspeitas INT DEFAULT 0;
