@@ -11,7 +11,7 @@ import verificacao.ConsultaCNPJ;
 import verificacao.ConsultaBanco;
 import boleto.ValidadorLinhaDigitavel; // Importe a classe ValidadorCodigoBarras
 
-import java.time.format.DateTimeFormatter; 
+import java.time.format.DateTimeFormatter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
@@ -187,7 +187,6 @@ public class ProcessadorBoleto {
             boletoExtraido.setStatusValidacaoBanco(statusValidacaoBancoAPI);
             System.out.println("Status da validacao do banco: " + statusValidacaoBancoAPI);
 
-
             // Determinar se o boleto é "falho" para a reputação do CNPJ
             boolean isBoletoFalhoParaReputacao = false;
             if ("INVALIDO".equals(boletoExtraido.getStatusValidacao()) ||
@@ -200,62 +199,85 @@ public class ProcessadorBoleto {
             }
 
             // NOVO: Atualizar reputação do CNPJ
+            // O bloco try-catch foi movido para envolver toda a lógica de reputação do CNPJ.
             try {
-                // Antes de chamar RepositorioCnpjReputacao.atualizarReputacaoCnpj, o boletoExtraido.totalAtualizacoes
-                // precisa estar com o valor correto do banco de dados (se o boleto já existia).
-                // Isso é feito no RepositorioBoleto.inserirBoleto (na parte de 'if (rs.next())')
-                // No entanto, para o ProcessadorBoleto, se o boleto *não existia* antes de ser extraído,
-                // totalAtualizacoes será 0, o que é o valor padrão. Se existia e foi atualizado,
-                // RepositorioBoleto já terá definido o valor em boletoExtraido.setTotalAtualizacoes().
-                repositorioCnpjReputacao.atualizarReputacaoCnpj(boletoExtraido.getCnpjEmitente(), isBoletoFalhoParaReputacao, boletoExtraido.getTotalAtualizacoes());
+                // 1. Atualizar a reputação do CNPJ no repositório.
+                // O score, total de boletos e total de denúncias serão atualizados lá.
+                if (boletoExtraido.getCnpjEmitente() != null && !boletoExtraido.getCnpjEmitente().isEmpty()) {
+                    repositorioCnpjReputacao.atualizarReputacaoCnpj(
+                                    boletoExtraido.getCnpjEmitente(),
+                                    isBoletoFalhoParaReputacao,
+                                    boletoExtraido.getTotalAtualizacoes() // Passa o total de atualizações do boleto
+                    );
 
-                // Busca a reputação atualizada para exibir ao usuário e salvar no boleto
-                Object[] reputacaoAtual = repositorioCnpjReputacao
-                        .buscarReputacaoCnpj(boletoExtraido.getCnpjEmitente());
-                if (reputacaoAtual != null) {
-                    BigDecimal score = (BigDecimal) reputacaoAtual[0];
-                    int totalBoletosCnpj = (int) reputacaoAtual[1];
-                    int totalDenunciasCnpj = (int) reputacaoAtual[2];
+                    // 2. Buscar a reputação atualizada para exibir ao usuário e salvar no objeto Boleto.
+                    Object[] reputacaoAtual = repositorioCnpjReputacao.buscarReputacaoCnpj(boletoExtraido.getCnpjEmitente());
 
-                    // Define os valores de reputação no objeto Boleto
-                    boletoExtraido.setScoreReputacaoCnpj(score);
-                    boletoExtraido.setTotalBoletosCnpj(totalBoletosCnpj);
-                    boletoExtraido.setTotalDenunciasCnpj(totalDenunciasCnpj);
+                    if (reputacaoAtual != null) {
+                        BigDecimal score = (BigDecimal) reputacaoAtual[0];
+                        int totalBoletosCnpj = (int) reputacaoAtual[1];
+                        int totalDenunciasCnpj = (int) reputacaoAtual[2];
 
-                    String classificacao;
-                    if (score.compareTo(new BigDecimal("80.00")) > 0) {
-                        classificacao = "Confiável";
-                    } else if (score.compareTo(new BigDecimal("50.00")) >= 0
-                            && score.compareTo(new BigDecimal("80.00")) <= 0) {
-                        classificacao = "Risco Moderado";
-                    } else {
-                        if (score.compareTo(BigDecimal.ZERO) == 0) {
+                        // 3. Define os valores de reputação no objeto Boleto
+                        boletoExtraido.setScoreReputacaoCnpj(score);
+                        boletoExtraido.setTotalBoletosCnpj(totalBoletosCnpj);
+                        boletoExtraido.setTotalDenunciasCnpj(totalDenunciasCnpj);
+
+                        // 4. Classificação da reputação (baseada nos dados já calculados pelo repositório)
+                        String classificacao;
+
+                        // AVISO: A regra de "Insuficiente" para poucos boletos (ex: < 5) não está aqui,
+                        // pois o RepositorioCnpjReputacao não a retorna explicitamente.
+                        // Se essa classificação ainda for necessária, você pode adicioná-la aqui
+                        // OU fazer com que o RepositorioCnpjReputacao a retorne.
+                        // Por exemplo:
+                        if (totalBoletosCnpj < 5) {
+                            classificacao = "Insuficiente";
+                            System.out.println("CNPJ com poucos boletos registrados. Classificação temporariamente como 'Insuficiente'.");
+                        } else if (score.compareTo(new BigDecimal("80.00")) > 0) {
+                            classificacao = "Confiável";
+                        } else if (score.compareTo(new BigDecimal("50.00")) >= 0) { // O limite superior já está implícito pelo 'if' anterior
+                            classificacao = "Risco Moderado";
+                        } else if (score.compareTo(BigDecimal.ZERO) == 0) {
                             classificacao = "Reincidente";
-                        } else {
+                            System.out.println("\n⚠ Este CNPJ possui denuncias recorrentes e score zerado. Risco elevado.");
+                        } else { // Score entre 0 (exclusive) e 50 (exclusive)
                             classificacao = "Problemático";
+                            System.out.println("\n⚠ Este CNPJ possui falhas relevantes. Risco elevado.");
                         }
-                        System.out.println("\n⚠ Este CNPJ possui muitas denúncias anteriores. Risco elevado.");
-                    }
 
-                    System.out.println("Total de Boletos (CNPJ): " + totalBoletosCnpj);
-                    System.out.println("Total de Denuncias (CNPJ): " + totalDenunciasCnpj);
-                    System.out.printf("Score de Reputacao (CNPJ): %.2f%%\n", score);
-                    System.out.println("Classificacao (CNPJ): " + classificacao);
-                    System.out.println("Calculo de reputacao concluido para o CNPJ: " + boletoExtraido.getCnpjEmitente());
+                        System.out.println("Total de Boletos (CNPJ): " + totalBoletosCnpj);
+                        System.out.println("Total de Denuncias (CNPJ): " + totalDenunciasCnpj);
+                        System.out.printf("Score de Reputacao (CNPJ): %.2f%%\n", score);
+                        System.out.println("Classificacao (CNPJ): " + classificacao);
+                        System.out.println("Calculo de reputacao concluido para o CNPJ: " + boletoExtraido.getCnpjEmitente());
 
-                    if ((classificacao.equals("Reincidente") || classificacao.equals("Problemático"))
-                            && totalDenunciasCnpj >= 10) {
-                        boletoExtraido.setSuspeito(true); // ATUALIZADO: setSuspeito(true)
-                        System.out.println("Boleto de CNPJ classificado como '" + classificacao + "' e com "
-                                + totalDenunciasCnpj + " denuncias. Marcado como SUSPEITO automaticamente!"); // ATUALIZADO: SUSPEITO
+                        // 5. Marca o boleto como suspeito, se aplicável
+                        // A regra de 'totalDenunciasCnpj >= 10' para marcar como suspeito é importante
+                        if ((classificacao.equals("Reincidente") || classificacao.equals("Problemático"))
+                                && totalDenunciasCnpj >= 5) {
+                            boletoExtraido.setSuspeito(true);
+                            System.out.println("Boleto de CNPJ classificado como '" + classificacao + "' e com "
+                                    + totalDenunciasCnpj + " denúncias. Marcado como SUSPEITO automaticamente!");
+                            // Ajusta o status de validação se estava "VALIDO_COMPLETO"
+                            if ("VALIDO_COMPLETO".equals(boletoExtraido.getStatusValidacao())) {
+                                boletoExtraido.setStatusValidacao("ALERTA_GERAL_NAO_CONFORMIDADE");
+                            }
+                        }
+
+                    } else {
+                        System.out.println("Não foi possível buscar a reputação do CNPJ. Pode ser um novo CNPJ (ou erro na busca).");
+                        // Se o CNPJ é novo, o repositorioCnpjReputacao.atualizarReputacaoCnpj já o teria inserido com score 100.
+                        // Então, 'reputacaoAtual' só deveria ser null em caso de erro.
                     }
+                } else { // Este 'else' agora está dentro do 'try', correspondendo ao 'if' do CNPJ emitente
+                    System.out.println("Não foi possível calcular reputação: CNPJ Emitente não extraído ou vazio.");
                 }
             } catch (SQLException e) {
-                System.err.println("Erro ao processar reputacao do CNPJ: " + e.getMessage());
-                // Não relança a exceção aqui para não impedir o salvamento do boleto
+                System.err.println("Erro ao processar reputação do CNPJ: " + e.getMessage());
+                // Não relança a exceção aqui para não impedir o salvamento/processamento do boleto
             }
-            // FIM NOVO: Atualizar reputação do CNPJ
-
+            // FIM DO BLOCO DE REPUTAÇÃO E SEU TRY-CATCH
 
             Usuario usuarioAnonimo = repositorioUsuario.criarUsuarioAnonimo();
             if (usuarioAnonimo == null || usuarioAnonimo.getId() == 0) {
@@ -279,7 +301,7 @@ public class ProcessadorBoleto {
                 System.err.println("Falha desconhecida ao salvar o boleto.");
             }
 
-        } else {
+        } else { // Este 'else' corresponde ao 'if (extracaoMinimaBemSucedida)' inicial
             System.out.println("\n Nao foi possivel extrair informacoes essenciais do boleto (codigo de barras ou CNPJ). Verifique o arquivo.");
         }
     }
@@ -306,7 +328,8 @@ public class ProcessadorBoleto {
         if (valorInformado.compareTo(valorDoCodigoBarras) == 0) {
             System.out.println("O valor informado corresponde ao valor no codigo de barras. Verificacao de valor OK.");
         } else {
-            System.out.println("ATENCAO: O valor informado NAO corresponde ao valor no codigo de barras. Isso pode indicar um problema.");
+            System.out.println(
+                    "ATENCAO: O valor informado NAO corresponde ao valor no codigo de barras. Isso pode indicar um problema.");
         }
     }
 
@@ -338,7 +361,8 @@ public class ProcessadorBoleto {
 
             try (PreparedStatement insertStmt = conexao.prepareStatement(insertSql)) {
                 insertStmt.setString(1, cnpj);
-                insertStmt.setString(2, nomeRazaoSocial != null && !nomeRazaoSocial.isEmpty() ? nomeRazaoSocial : "Desconhecido (Extraído do PDF)");
+                insertStmt.setString(2, nomeRazaoSocial != null && !nomeRazaoSocial.isEmpty() ? nomeRazaoSocial
+                        : "Desconhecido (Extraído do PDF)");
                 insertStmt.setDate(3, Date.valueOf(LocalDate.now()));
 
                 int linhasAfetadas = insertStmt.executeUpdate();

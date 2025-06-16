@@ -3,6 +3,8 @@ package usuario;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 // Certifique-se de que esta classe está no pacote correto, como 'boleto'
 public class Boleto {
@@ -41,8 +43,14 @@ public class Boleto {
     // NOVO CAMPO: Contador de atualizações para o boleto específico (lido do banco)
     private int totalAtualizacoes;
 
+    private String mensagemAlerta;
+    private List<String> detalhesFalha;
+    private String classificacaoReputacao;
+    private BigDecimal valorExtraidoLinhaDigital;
+
     // Construtor vazio
     public Boleto() {
+        this.detalhesFalha = new ArrayList<>();
         this.dataExtracao = LocalDateTime.now(); // Define a data de extração no momento da criação
         this.statusValidacao = "PENDENTE"; // Status inicial
         this.statusValidacaoBanco = "PENDENTE"; // Status inicial do banco
@@ -260,5 +268,37 @@ public class Boleto {
 
     public void setCodigoBancoApi(String codigoBancoApi) { // <--- Adicione este setter
         this.codigoBancoApi = codigoBancoApi;
+    }
+
+    public void addDetalheFalha(String detalhe) {
+        this.detalhesFalha.add(detalhe);
+    }
+
+    public List<String> getDetalhesFalha() {
+        return detalhesFalha;
+    }
+
+    public String getMensagemAlerta() {
+        return mensagemAlerta;
+    }
+
+    public void setMensagemAlerta(String mensagemAlerta) {
+        this.mensagemAlerta = mensagemAlerta;
+    }
+
+     public String getClassificacaoReputacao() {
+        return classificacaoReputacao;
+    }
+
+    public void setClassificacaoReputacao(String classificacaoReputacao) {
+        this.classificacaoReputacao = classificacaoReputacao;
+    }
+
+     public BigDecimal getValorExtraidoLinhaDigital() {
+        return valorExtraidoLinhaDigital;
+    }
+
+    public void setValorExtraidoLinhaDigital(BigDecimal valorExtraidoLinhaDigital) {
+        this.valorExtraidoLinhaDigital = valorExtraidoLinhaDigital;
     }
 }

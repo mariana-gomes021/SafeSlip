@@ -95,7 +95,7 @@ public class ValidadorEmitente {
         System.out.println("Status da validacao do banco pela API: " + statusConsultaBanco);
 
         System.out.println("\n--- Dados do Banco " + codigoBanco + " Retornados pela BrasilAPI ---");
-        System.out.println("Codigo do Banco (API): " + (boleto.getCodigoBancoApi() != null ? boleto.getCodigoBancoApi() : "Nao disponivel"));
+        System.out.println("Codigo do Banco: " + codigoBanco);
         System.out.println("Nome do Banco (API): " + (boleto.getNomeBancoApi() != null ? boleto.getNomeBancoApi() : "Nao disponivel"));
         System.out.println("Nome Completo do Banco (API): " + (boleto.getNomeCompletoBancoApi() != null ? boleto.getNomeCompletoBancoApi() : "Nao disponivel"));
         System.out.println("ISPB (API): " + (boleto.getIspbBancoApi() != null ? boleto.getIspbBancoApi() : "Nao disponivel"));

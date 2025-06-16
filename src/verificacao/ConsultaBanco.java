@@ -31,12 +31,6 @@ public class ConsultaBanco {
     }
 
     /**
-     * Normaliza uma string de nome de banco para facilitar a comparação.
-     * REMOVIDO: Este método não é mais usado na validação automática do nome.
-     */
-    // private String normalizarNomeBanco(String nome) { /* ... */ }
-
-    /**
      * Consulta a API da BrasilAPI para obter dados de um banco pelo seu código.
      * Agora retorna um JSONObject completo ou null.
      */
@@ -94,7 +88,6 @@ public class ConsultaBanco {
                 System.err.println("Banco com codigo '" + codigoBanco + "' nao encontrado.");
                 return null;
             }
-            // Não imprimir aqui, vamos imprimir no ProcessadorLinhaDigitavel para confirmação do usuário.
             return json;
 
         } catch (java.net.SocketTimeoutException e) {
@@ -123,6 +116,7 @@ public class ConsultaBanco {
             boleto.setNomeBancoApi("N/A");
             boleto.setNomeCompletoBancoApi("N/A");
             boleto.setIspbBancoApi("N/A");
+            boleto.setCodigoBancoApi("N/A"); // <-- Adicionado para tratar caso de código ausente
             return "CODIGO_AUSENTE"; 
         }
 
@@ -134,7 +128,8 @@ public class ConsultaBanco {
             boleto.setNomeBancoApi("N/A");
             boleto.setNomeCompletoBancoApi("N/A");
             boleto.setIspbBancoApi("N/A");
-            return "DADOS_NAO_ENCONTRADOS_API"; // Novo status para indicar falha na consulta ou banco não encontrado
+            boleto.setCodigoBancoApi("N/A"); // <-- Adicionado para tratar caso de dados não encontrados na API
+            return "DADOS_NAO_ENCONTRADOS_API";
         }
 
         // Extrai e preenche os dados no objeto Boleto
@@ -157,6 +152,7 @@ public class ConsultaBanco {
         boleto.setNomeBancoApi(name);
         boleto.setNomeCompletoBancoApi(fullName);
         boleto.setIspbBancoApi(ispb);
+        boleto.setCodigoBancoApi(code); // <-- AQUI ESTÁ A MUDANÇA CRÍTICA!
 
         // Compara o código do banco
         if (code == null || !this.codigoBancoExtraidoDoBoleto.equals(code)) {
@@ -165,6 +161,6 @@ public class ConsultaBanco {
         }
         
         System.out.println("Dados do Banco recebidos.");
-        return "VALIDO_API"; // Indica que a API retornou dados válidos para o código do banco
+        return "VALIDO_API";
     }
 }
