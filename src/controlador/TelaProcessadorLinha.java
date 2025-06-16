@@ -5,34 +5,31 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
-import java.time.format.DateTimeFormatter; // Importar para formatar a data
-import controlador.ProcessadoresGUI.ProcessadorLinhaGui; // Importe o ProcessadorLinhaGui
-import usuario.Boleto; // Importe a classe Boleto
+import java.time.format.DateTimeFormatter;
+import controlador.ProcessadoresGUI.ProcessadorLinhaGui;
+import usuario.Boleto;
 
 public class TelaProcessadorLinha extends JPanel {
 
     private CardLayout cardLayout;
     private JPanel parentContainer;
 
-    // Componentes da GUI
     private JTextField lineInputField;
     private JTextField valueInputField;
     private JTextField dueDateField;
-    private JTextField cnpjInputField; 
-    // private JCheckBox discountCheckBox; // <--- REMOVIDO: Não é mais necessário declarar aqui
+    private JTextField cnpjInputField;
     private JTextArea resultArea;
     private JButton processButton;
-    private JButton backButton; 
+    private JButton backButton;
 
-    // O objeto Boleto será retornado pelo primeiro processamento e usado para o segundo
-    private Boleto boletoEmProcessamento;
+    private Boleto boletoEmProcessamento; // Objeto Boleto que será populado e depois finalizado
+    private ProcessadorLinhaGui processador; // Instância do processador
 
-    // Construtor com CardLayout e JPanel para navegação
     public TelaProcessadorLinha(CardLayout cardLayout, JPanel parentContainer) {
         this.cardLayout = cardLayout;
         this.parentContainer = parentContainer;
-
-        initComponents(); 
+        this.processador = new ProcessadorLinhaGui(); // Instancia o processador uma vez
+        initComponents();
     }
 
     private void initComponents() {
@@ -43,72 +40,57 @@ public class TelaProcessadorLinha extends JPanel {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         add(titleLabel, BorderLayout.NORTH);
 
-        // Painel para os campos de entrada (Linha Digitável, Valor, Vencimento, CNPJ)
         JPanel inputPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5); 
+        gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Linha Digitável
         gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.EAST;
         inputPanel.add(new JLabel("Linha Digitável:"), gbc);
         gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0;
         lineInputField = new JTextField(30);
         inputPanel.add(lineInputField, gbc);
 
-        // Valor ORIGINAL do Pagamento (com o novo texto)
         gbc.gridx = 0; gbc.gridy = 1; gbc.anchor = GridBagConstraints.EAST;
-        inputPanel.add(new JLabel("Valor *original* do boleto (sem descontos, formato 00.00):"), gbc); // <--- TEXTO ATUALIZADO
+        inputPanel.add(new JLabel("Valor *original* do boleto (sem descontos, formato 00.00):"), gbc);
         gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 1.0;
         valueInputField = new JTextField(15);
         inputPanel.add(valueInputField, gbc);
 
-        // Data de Vencimento
         gbc.gridx = 0; gbc.gridy = 2; gbc.anchor = GridBagConstraints.EAST;
         inputPanel.add(new JLabel("Vencimento (DD/MM/AAAA):"), gbc);
         gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 1.0;
         dueDateField = new JTextField(10);
         inputPanel.add(dueDateField, gbc);
-        
-        // CNPJ do Beneficiário
+
         gbc.gridx = 0; gbc.gridy = 3; gbc.anchor = GridBagConstraints.EAST;
         inputPanel.add(new JLabel("CNPJ Beneficiário:"), gbc);
         gbc.gridx = 1; gbc.gridy = 3; gbc.weightx = 1.0;
-        cnpjInputField = new JTextField(18); 
+        cnpjInputField = new JTextField(18);
         inputPanel.add(cnpjInputField, gbc);
 
-        // O JCheckBox 'discountCheckBox' e sua adição ao painel foram REMOVIDOS aqui.
-        // gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.anchor = GridBagConstraints.WEST;
-        // discountCheckBox = new JCheckBox("Este boleto possui desconto?");
-        // inputPanel.add(discountCheckBox, gbc);
-
-        // Botão Processar (ajustado o gridy para a próxima posição disponível)
-        gbc.gridx = 0; gbc.gridy = 4; // <--- Ajustado o gridy após a remoção do checkbox
+        gbc.gridx = 0; gbc.gridy = 4;
         gbc.gridwidth = 2; gbc.anchor = GridBagConstraints.CENTER;
         processButton = new JButton("Processar Linha Digitável");
         inputPanel.add(processButton, gbc);
 
-        add(inputPanel, BorderLayout.CENTER); 
+        add(inputPanel, BorderLayout.CENTER);
 
-        // Área de resultados (inicialmente vazia, preenchida após o processamento)
         resultArea = new JTextArea(15, 40);
         resultArea.setEditable(false);
         resultArea.setLineWrap(true);
         resultArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(resultArea);
-        
-        // Painel de botões no rodapé
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         backButton = new JButton("Voltar à Página Inicial");
         buttonPanel.add(backButton);
 
-        // Crie um novo painel para os resultados e o botão de voltar
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(scrollPane, BorderLayout.CENTER);
         bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // Listener para o botão de processamento
         processButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -116,12 +98,11 @@ public class TelaProcessadorLinha extends JPanel {
             }
         });
 
-        // Listener para o botão de voltar
         backButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 cardLayout.show(parentContainer, "telaEnvioBoleto");
-                clearFields(); // Limpa os campos ao voltar
+                clearFields();
             }
         });
     }
@@ -131,7 +112,6 @@ public class TelaProcessadorLinha extends JPanel {
         final String valorStr = valueInputField.getText().trim();
         final String dataVencimentoStr = dueDateField.getText().trim();
         final String cnpjInput = cnpjInputField.getText().trim();
-        // final boolean temDesconto = discountCheckBox.isSelected(); // <--- REMOVIDO: Não é mais usada
 
         if (linhaDigitavel.isEmpty() || valorStr.isEmpty() || dataVencimentoStr.isEmpty() || cnpjInput.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Por favor, preencha todos os campos obrigatórios.", "Campos Vazios", JOptionPane.WARNING_MESSAGE);
@@ -139,21 +119,13 @@ public class TelaProcessadorLinha extends JPanel {
         }
 
         resultArea.setText("Iniciando processamento da linha digitável...\n");
-        // Desabilita o botão para evitar cliques múltiplos enquanto processa
         processButton.setEnabled(false);
 
         SwingWorker<Boleto, Void> worker = new SwingWorker<Boleto, Void>() {
             @Override
             protected Boleto doInBackground() throws Exception {
-                // Primeira chamada ao ProcessadorLinhaGui para pegar os dados da API
-                ProcessadorLinhaGui initialProcessor = new ProcessadorLinhaGui();
-                // Passa 'false' para as confirmações de usuário na primeira vez
-                return initialProcessor.processarLinhaDigitavel(
-                    linhaDigitavel, valorStr, dataVencimentoStr, 
-                    false, // <--- Sempre passa 'false' para 'temDesconto'
-                    false, false, // Sem confirmação de usuário ainda
-                    cnpjInput
-                );
+                // APENAS A PRIMEIRA CHAMADA: Realiza as validações preliminares
+                return processador.validarDadosPreliminares(linhaDigitavel, valorStr, dataVencimentoStr, cnpjInput);
             }
 
             @Override
@@ -166,27 +138,26 @@ public class TelaProcessadorLinha extends JPanel {
                     }
 
                     // --- ETAPA DE CONFIRMAÇÃO DO USUÁRIO ---
-
                     // 1. Exibir informações do CNPJ e pedir confirmação
                     String razaoSocial = (boletoEmProcessamento.getRazaoSocialApi() != null && !boletoEmProcessamento.getRazaoSocialApi().isEmpty()) ? boletoEmProcessamento.getRazaoSocialApi() : "Não disponível";
                     String nomeFantasia = (boletoEmProcessamento.getNomeFantasiaApi() != null && !boletoEmProcessamento.getNomeFantasiaApi().isEmpty()) ? boletoEmProcessamento.getNomeFantasiaApi() : "Não disponível";
-                    
-                    String cnpjMessage = "--- Dados do CNPJ " + boletoEmProcessamento.getCnpjEmitente() + " Retornados pela BrasilAPI ---\n" +
+
+                    String cnpjMessage = "--- Dados do CNPJ " + boletoEmProcessamento.getCnpjEmitente() + " " +
                                          "Razão Social: " + razaoSocial + "\n" +
                                          "Nome Fantasia: " + nomeFantasia + "\n" +
                                          "As informações do CNPJ acima estão corretas?";
-                    
-                    int cnpjOption = JOptionPane.showConfirmDialog(TelaProcessadorLinha.this, cnpjMessage, 
+
+                    int cnpjOption = JOptionPane.showConfirmDialog(TelaProcessadorLinha.this, cnpjMessage,
                                                                     "Confirmação de CNPJ", JOptionPane.YES_NO_OPTION);
                     boolean usuarioConfirmouCnpj = (cnpjOption == JOptionPane.YES_OPTION);
-                    
+
                     // 2. Exibir informações do Banco e pedir confirmação
                     String codigoBanco = boletoEmProcessamento.getBancoEmissor();
                     String nomeBanco = (boletoEmProcessamento.getNomeBancoApi() != null && !boletoEmProcessamento.getNomeBancoApi().isEmpty()) ? boletoEmProcessamento.getNomeBancoApi() : "Não disponível";
                     String nomeCompletoBanco = (boletoEmProcessamento.getNomeCompletoBancoApi() != null && !boletoEmProcessamento.getNomeCompletoBancoApi().isEmpty()) ? boletoEmProcessamento.getNomeCompletoBancoApi() : "Não disponível";
                     String ispb = (boletoEmProcessamento.getIspbBancoApi() != null && !boletoEmProcessamento.getIspbBancoApi().isEmpty()) ? boletoEmProcessamento.getIspbBancoApi() : "Não disponível";
-                    
-                    String bancoMessage = "--- Dados do Banco " + codigoBanco + " Retornados pela BrasilAPI ---\n" +
+
+                    String bancoMessage = "--- Dados do Banco " + codigoBanco + " \n" +
                                           "Nome do Banco: " + nomeBanco + "\n" +
                                           "Nome Completo: " + nomeCompletoBanco + "\n" +
                                           "ISPB: " + ispb + "\n" +
@@ -196,17 +167,12 @@ public class TelaProcessadorLinha extends JPanel {
                                                                      "Confirmação de Banco", JOptionPane.YES_NO_OPTION);
                     boolean usuarioConfirmouBanco = (bancoOption == JOptionPane.YES_OPTION);
 
-                    // --- SEGUNDA CHAMADA AO PROCESSADOR (COM AS CONFIRMAÇÕES DO USUÁRIO) ---
-                    // Esta é a chamada "final" que considera a interação do usuário.
-                    ProcessadorLinhaGui finalProcessor = new ProcessadorLinhaGui();
-                    Boleto boletoFinalizado = finalProcessor.processarLinhaDigitavel(
-                        linhaDigitavel, valorStr, dataVencimentoStr, 
-                        false, // <--- Sempre passa 'false' para 'temDesconto'
-                        usuarioConfirmouCnpj, usuarioConfirmouBanco, // Passa as confirmações do usuário
-                        cnpjInput 
+                    // --- CHAMADA FINAL PARA PERSISTÊNCIA E REPUTAÇÃO ---
+                    // Passa o MESMO objeto boleto e as confirmações do usuário
+                    Boleto boletoFinalizado = processador.finalizarProcessamentoESalvar(
+                        boletoEmProcessamento, usuarioConfirmouCnpj, usuarioConfirmouBanco
                     );
 
-                    // Exibir os resultados finais do boleto
                     displayBoletoResults(boletoFinalizado);
 
                 } catch (IllegalArgumentException ex) {
@@ -225,7 +191,7 @@ public class TelaProcessadorLinha extends JPanel {
                 }
             }
         };
-        worker.execute(); // Executa o processamento em background
+        worker.execute();
     }
 
     private void displayBoletoResults(Boleto boleto) {
@@ -247,23 +213,15 @@ public class TelaProcessadorLinha extends JPanel {
         sb.append("Razão Social: ").append(boleto.getRazaoSocialApi() != null ? boleto.getRazaoSocialApi() : "N/A").append("\n");
         sb.append("Nome Fantasia: ").append(boleto.getNomeFantasiaApi() != null ? boleto.getNomeFantasiaApi() : "N/A").append("\n");
         sb.append("Confirmação Usuário (CNPJ/Banco): ").append(boleto.isInformacoesConfirmadasPeloUsuario() ? "Sim" : "Não").append("\n");
-        
+
         sb.append("\n--- DADOS DO BANCO ---\n");
         sb.append("Código do Banco: ").append(boleto.getBancoEmissor() != null ? boleto.getBancoEmissor() : "N/A").append("\n");
         sb.append("Nome do Banco: ").append(boleto.getNomeBancoApi() != null ? boleto.getNomeBancoApi() : "N/A").append("\n");
         sb.append("Nome Completo Banco: ").append(boleto.getNomeCompletoBancoApi() != null ? boleto.getNomeCompletoBancoApi() : "N/A").append("\n");
-      
-
 
         sb.append("\n--- STATUS GERAL DA VALIDAÇÃO ---\n");
-        // Verifica se a linha digitável é estruturalmente válida
-        if ("ERRO_ESTRUTURA_OU_DV_LD".equals(boleto.getStatusValidacao())) {
-            sb.append("Validação da Linha Digitável: ").append("INVÁLIDA").append("\n");
-        } else {
-            sb.append("Validação da Linha Digitável: ").append("VÁLIDA").append("\n");
-        }
-       
-        
+        sb.append("Boleto Suspeito: ").append(boleto.isSuspeito() ? "Sim" : "Não").append("\n");
+
 
         // --- DETALHES DE ALERTAS/FALHAS ENCONTRADAS ---
         sb.append("\n--- DETALHES DE ALERTAS/FALHAS ENCONTRADAS ---\n");
@@ -285,11 +243,11 @@ public class TelaProcessadorLinha extends JPanel {
             sb.append("- O usuário NÃO confirmou os dados do Banco apresentados pela API.\n");
             possuiAlertas = true;
         }
-        if (boleto.getStatusValidacaoCnpj().contains("ALERTA_API_OFFLINE")) {
+        if (boleto.getStatusValidacaoCnpj().contains("ALERTA_API_OFFLINE") || boleto.getStatusValidacaoCnpj().contains("ERRO_CONSULTA_API_CNPJ")) {
             sb.append("- A consulta à API de CNPJ retornou erro ou estava offline.\n");
             possuiAlertas = true;
         }
-        if (boleto.getStatusValidacaoBanco().contains("ALERTA_API_OFFLINE")) {
+        if (boleto.getStatusValidacaoBanco().contains("ALERTA_API_OFFLINE") || boleto.getStatusValidacaoBanco().contains("ERRO_CONSULTA_API_BANCO")) {
             sb.append("- A consulta à API de Bancos retornou erro ou estava offline.\n");
             possuiAlertas = true;
         }
@@ -297,41 +255,30 @@ public class TelaProcessadorLinha extends JPanel {
             sb.append("- **ALERTA DE FRAUDE:** Nome/Razão Social do CNPJ diverge da base de dados ou é genérico.\n");
             possuiAlertas = true;
         }
-        if (!possuiAlertas && !"VALIDO_COMPLETO".equals(boleto.getStatusValidacao())) {
-             // Caso existam outros status de "não conformidade" que não foram explicitamente detalhados acima
-             sb.append("- Outra não conformidade detectada: ").append(boleto.getStatusValidacao()).append("\n");
-             possuiAlertas = true;
+        if (boleto.isSuspeito() && !possuiAlertas) { // Caso a flag suspeito esteja true, mas não haja alertas específicos listados
+            sb.append("- Boleto marcado como suspeito por inconsistências internas.\n");
+            possuiAlertas = true;
         }
         if (!possuiAlertas) {
-            sb.append("- Nenhuma falha ou alerta detectado diretamente na validação.\n");
+            sb.append("- Nenhuma alerta/falha significativa encontrada nas validações.\n");
         }
-
-
+        
         sb.append("\n--- REPUTAÇÃO DO CNPJ EMITENTE ---\n");
         sb.append(String.format("Score de Reputação: %.2f%%\n", boleto.getScoreReputacaoCnpj()));
-        sb.append("Classificação: ").append(boleto.getClassificacaoReputacao() != null ? boleto.getClassificacaoReputacao() : "N/A").append("\n");
-        sb.append("Total de Boletos (CNPJ): ").append(boleto.getTotalBoletosCnpj()).append("\n");
-        sb.append("Total de Suspeitas (CNPJ): ").append(boleto.getTotalDenunciasCnpj()).append("\n");
-        
-        // --- Linha "Boleto Considerado Suspeito" formatada ---
-        sb.append("Boleto Considerado Suspeito: ");
-        if (boleto.isSuspeito()) {
-            sb.append("**SIM**\n");
-        } else {
-            sb.append("NÃO\n");
-        }
+        sb.append("Classificação: ").append(boleto.getClassificacaoReputacao()).append("\n");
+        sb.append("Total de Boletos Associados ao CNPJ: ").append(boleto.getTotalBoletosCnpj()).append("\n");
+        sb.append("Total de Denúncias Associadas ao CNPJ: ").append(boleto.getTotalDenunciasCnpj()).append("\n");
+
 
         resultArea.setText(sb.toString());
     }
-
 
     private void clearFields() {
         lineInputField.setText("");
         valueInputField.setText("");
         dueDateField.setText("");
         cnpjInputField.setText("");
-        // discountCheckBox.setSelected(false); // <--- REMOVIDO: Não é mais necessário
         resultArea.setText("");
-        boletoEmProcessamento = null; // Limpa o boleto em processamento
+        boletoEmProcessamento = null;
     }
 }
