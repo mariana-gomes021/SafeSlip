@@ -12,7 +12,7 @@ public class EnviarEmail {
     private final String USUARIO = "compliance.safeslip@gmail.com";
     private final String SENHA_APP = "igdwxftzrwvsqftp"; //nao mexa
 
-    private String destinatario = "boletos.suspeitos.bcb.gov@gmail.com";
+    private String destinatario = "boletosuspeitos.bcb.gov@gmail.com";
 
     private Properties props = new Properties();
 

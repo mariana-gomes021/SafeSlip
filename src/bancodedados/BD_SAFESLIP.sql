@@ -136,3 +136,21 @@ ALTER TABLE Boleto CHANGE COLUMN denunciado suspeito BOOLEAN DEFAULT FALSE;
 ALTER TABLE CNPJ_Reputacao CHANGE COLUMN total_denuncias total_suspeitas BOOLEAN DEFAULT FALSE;
 ALTER TABLE CNPJ_Reputacao
 ADD COLUMN ultimo_email_enviado_em_suspeitas INT DEFAULT 0;
+
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE Boleto;
+
+-- 3. Limpa a tabela 'CNPJ_Reputacao'
+-- 'CNPJ_Reputacao' depende de 'CNPJ_Emitente'.
+TRUNCATE TABLE CNPJ_Reputacao;
+
+-- 4. Limpa a tabela 'CNPJ_Emitente'
+-- 'CNPJ_Emitente' é referenciada por 'Boleto' e 'CNPJ_Reputacao'.
+TRUNCATE TABLE CNPJ_Emitente;
+
+-- 5. Limpa a tabela 'Usuario'
+-- 'Usuario' é referenciada por 'Boleto'.
+TRUNCATE TABLE Usuario;
+
+-- 6. Reativa a verificação de chaves estrangeiras
+SET FOREIGN_KEY_CHECKS = 1;

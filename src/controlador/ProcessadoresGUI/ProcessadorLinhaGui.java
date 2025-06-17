@@ -31,29 +31,16 @@ public class ProcessadorLinhaGui {
         this.repositorioCnpjEmitente = new RepositorioCnpjEmitente();
     }
 
-    /**
-     * Realiza as validações iniciais da linha digitável e preenche o objeto Boleto
-     * com os dados extraídos e resultados das consultas às APIs (CNPJ e Banco).
-     * Este método NÃO salva o boleto no banco de dados e NÃO atualiza a reputação.
-     *
-     * @param linhaDigitalInput A linha digitável informada pelo usuário.
-     * @param valorStr O valor do pagamento como String.
-     * @param dataVencimentoStr A data de vencimento como String (DD/MM/AAAA).
-     * @param cnpjInformado O CNPJ digitado pelo usuário na GUI.
-     * @return Um objeto Boleto preenchido com as validações preliminares.
-     * @throws IllegalArgumentException Se os formatos de entrada (valor, data) forem inválidos.
-     * @throws SQLException Se ocorrer um erro ao interagir com o banco de dados (especialmente RepositorioCnpjEmitente).
-     */
+    // ... (Seu método validarDadosPreliminares permanece o mesmo) ...
     public Boleto validarDadosPreliminares(String linhaDigitalInput, String valorStr,
                                            String dataVencimentoStr, String cnpjInformado)
                                            throws IllegalArgumentException, SQLException {
-
+        // ... (conteúdo do validarDadosPreliminares) ...
         String linhaDigital = linhaDigitalInput.trim().replaceAll("[^0-9]", "");
         Boleto boleto = new Boleto();
         boleto.setCodigoBarras(linhaDigital);
         boleto.setDataExtracao(LocalDateTime.now());
 
-        // --- 1. Validação da estrutura e dígitos verificadores da linha digitável ---
         boolean linhaDigitalEstruturaEVsValida = ValidadorLinhaDigitavel.validar(linhaDigital);
         if (!linhaDigitalEstruturaEVsValida) {
             boleto.setStatusValidacao("ERRO_ESTRUTURA_OU_DV_LD");
@@ -63,7 +50,6 @@ public class ProcessadorLinhaGui {
             boleto.setStatusValidacao("VALIDO_ESTRUTURA_LD");
         }
 
-        // --- 2. Processamento da Data de Vencimento ---
         LocalDate vencimento = null;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         try {
@@ -73,7 +59,6 @@ public class ProcessadorLinhaGui {
             throw new IllegalArgumentException("Formato de data de vencimento inválido. Use o formato DD/MM/AAAA.");
         }
 
-        // --- 3. Processamento do Valor do Boleto ---
         BigDecimal valorInformadoPeloUsuario = null;
         try {
             valorInformadoPeloUsuario = new BigDecimal(valorStr.replace(",", "."));
@@ -102,25 +87,23 @@ public class ProcessadorLinhaGui {
             boleto.addDetalheFalha("Falha: Valor informado difere do valor extraído da linha digitável.");
         }
 
-        // --- 4. Validação de CNPJ com ConsultaCNPJ ---
         String cnpjLimpo = cnpjInformado.trim().replaceAll("[^0-9]", "");
         boleto.setCnpjEmitente(cnpjLimpo);
 
         if (cnpjLimpo.length() != 14) {
             boleto.setStatusValidacaoCnpj("CNPJ_INVALIDO_FORMATO");
             boleto.setSuspeito(true);
-            if (!boleto.getStatusValidacao().startsWith("ERRO")) { // Não sobrescreve um erro mais grave
+            if (!boleto.getStatusValidacao().startsWith("ERRO")) {
                 boleto.setStatusValidacao("ERRO_CNPJ_INVALIDO_FORMATO");
             }
             boleto.addDetalheFalha("Falha: CNPJ informado possui formato inválido.");
         } else {
-            ConsultaCNPJ consultaCnpj = new ConsultaCNPJ(boleto); // Passa o boleto para a consulta preencher
+            ConsultaCNPJ consultaCnpj = new ConsultaCNPJ(boleto);
             String statusConsultaCnpjApi = consultaCnpj.validarDadosComApi();
             boleto.setStatusValidacaoCnpj(statusConsultaCnpjApi);
 
             if (!"VALIDO".equals(statusConsultaCnpjApi)) {
                 boleto.setSuspeito(true);
-                // Define um status mais genérico se não for um erro de estrutura ou valor
                 if (!boleto.getStatusValidacao().startsWith("ERRO_") && !"VALOR_DIVERGENTE".equals(boleto.getStatusValidacao())) {
                     boleto.setStatusValidacao("ALERTA_OU_ERRO_CNPJ");
                 }
@@ -132,7 +115,6 @@ public class ProcessadorLinhaGui {
             }
         }
 
-        // --- 5. Validação de Dados Bancários com ConsultaBanco ---
         String codigoBancoExtraido = "";
         if (linhaDigital.length() >= 3) {
             codigoBancoExtraido = linhaDigital.substring(0, 3);
@@ -155,7 +137,7 @@ public class ProcessadorLinhaGui {
             }
             boleto.addDetalheFalha("Falha: Código do banco extraído tem formato inválido.");
         } else {
-            ConsultaBanco consultaBanco = new ConsultaBanco(boleto); // Passa o boleto para a consulta preencher
+            ConsultaBanco consultaBanco = new ConsultaBanco(boleto);
             String statusConsultaBancoApi = consultaBanco.validarBancoComApi();
             boleto.setStatusValidacaoBanco(statusConsultaBancoApi);
 
@@ -174,6 +156,7 @@ public class ProcessadorLinhaGui {
 
         return boleto;
     }
+
 
     /**
      * Finaliza o processamento do boleto, aplicando as confirmações do usuário,
@@ -199,10 +182,8 @@ public class ProcessadorLinhaGui {
             boleto.addDetalheFalha("Falha: Usuário NÃO confirmou os dados do CNPJ.");
             verificacoesComFalha++;
         } else {
-            // Se o usuário confirmou, mas a API indicou um problema, mantenha o alerta
             if (!"VALIDO".equals(boleto.getStatusValidacaoCnpj())) {
                  boleto.setStatusValidacaoCnpj("CNPJ_CONFIRMADO_USUARIO_COM_ALERTA");
-                 // Detalhe de falha já adicionado na fase preliminar se houvesse problema na API
                  verificacoesComFalha++;
             } else {
                 boleto.setStatusValidacaoCnpj("VALIDO_CNPJ_API_E_USUARIO");
@@ -216,33 +197,47 @@ public class ProcessadorLinhaGui {
             boleto.addDetalheFalha("Falha: Usuário NÃO confirmou os dados do Banco.");
             verificacoesComFalha++;
         } else {
-            // Se o usuário confirmou, mas a API indicou um problema, mantenha o alerta
             if (!"VALIDO".equals(boleto.getStatusValidacaoBanco())) {
                 boleto.setStatusValidacaoBanco("BANCO_CONFIRMADO_USUARIO_COM_ALERTA");
-                // Detalhe de falha já adicionado na fase preliminar se houvesse problema na API
                 verificacoesComFalha++;
             } else {
                 boleto.setStatusValidacaoBanco("VALIDO_BANCO_API_E_USUARIO");
             }
         }
-        
-        // Se a flag geral de confirmação do usuário não foi definida como false ainda, e ambas foram true
+
         if (usuarioConfirmouCnpj && usuarioConfirmouBanco && !boleto.isInformacoesConfirmadasPeloUsuario()) {
             boleto.setInformacoesConfirmadasPeloUsuario(true);
         }
-        
+
 
         // --- Lógica para determinar o status final geral do boleto ---
-        // Se o boleto já foi marcado como ERRO ou ALERTA (na fase preliminar ou pelas confirmações),
-        // ele mantém esse status, a menos que uma falha mais grave seja detectada.
         if (boleto.getStatusValidacao().startsWith("ERRO_") || "VALOR_DIVERGENTE".equals(boleto.getStatusValidacao())) {
             // Mantém o status de erro ou divergência de valor
         } else if (boleto.isSuspeito() || verificacoesComFalha > 0) {
-            // Se foi marcado como suspeito em qualquer fase ou teve falhas na confirmação
             boleto.setStatusValidacao("ALERTA_GERAL_NAO_CONFORMIDADE");
         } else {
-            // Se tudo passou e não há alertas/erros/suspeitas
             boleto.setStatusValidacao("VALIDO_COMPLETO");
+        }
+
+        // --- COMEÇO DA MUDANÇA CRÍTICA AQUI ---
+        // 1. GARANTIR QUE O CNPJ_EMITENTE EXISTA OU SEJA CRIADO PRIMEIRO
+        if (boleto.getCnpjEmitente() != null && !boleto.getCnpjEmitente().isEmpty() &&
+            !("CNPJ_INVALIDO_FORMATO".equals(boleto.getStatusValidacaoCnpj()))) {
+            try {
+                // Insere ou atualiza o registro na tabela CNPJ_Emitente
+                repositorioCnpjEmitente.inserirOuAtualizarCnpjEmitente(
+                    boleto.getCnpjEmitente(), boleto.getRazaoSocialApi());
+            } catch (SQLException e) {
+                System.err.println("Erro ao inserir/atualizar CNPJ_Emitente: " + e.getMessage());
+                boleto.addDetalheFalha("Erro: Falha ao persistir CNPJ do emitente: " + e.getMessage());
+                verificacoesComFalha++; // Contabiliza como falha
+                throw e; // Relança a exceção pois é um erro crítico para a FK
+            }
+        } else {
+            // Se o CNPJ não é válido ou está faltando, não podemos continuar com a reputação.
+            boleto.addDetalheFalha("Alerta: CNPJ Emitente inválido ou ausente. Reputação não processada.");
+            System.err.println("CNPJ Emitente inválido ou ausente. Reputação não processada.");
+            // Não precisa de throw aqui, pois a validação inicial já pegou o erro de formato.
         }
 
 
@@ -251,30 +246,29 @@ public class ProcessadorLinhaGui {
         // Se o boleto NÃO é VÁLIDO_COMPLETO, ele é considerado "falho" para a reputação.
         boolean isBoletoFalhoParaReputacao = !"VALIDO_COMPLETO".equals(boleto.getStatusValidacao());
 
-        try {
-            if (boleto.getCnpjEmitente() != null && !boleto.getCnpjEmitente().isEmpty()) {
-                // 1. Atualiza os contadores e o score de reputação do CNPJ no banco de dados.
-                // Passa 'isBoletoFalhoParaReputacao' para o método
+        // Agora, com a certeza de que CNPJ_Emitente existe (se o CNPJ for válido), podemos operar em CNPJ_Reputacao
+        if (boleto.getCnpjEmitente() != null && !boleto.getCnpjEmitente().isEmpty() &&
+            !("CNPJ_INVALIDO_FORMATO".equals(boleto.getStatusValidacaoCnpj()))) {
+            try {
+                // 2. Atualiza os contadores e o score de reputação do CNPJ no banco de dados.
                 repositorioCnpjReputacao.atualizarReputacaoCnpj(
                         boleto.getCnpjEmitente(),
                         isBoletoFalhoParaReputacao,
                         boleto.getTotalAtualizacoes() // Passa o total de atualizações deste boleto específico
                 );
 
-                // 2. Busca os dados de reputação atualizados do CNPJ no banco de dados.
+                // 3. Busca os dados de reputação atualizados do CNPJ no banco de dados.
                 Object[] reputacaoAtual = repositorioCnpjReputacao.buscarReputacaoCnpj(boleto.getCnpjEmitente());
 
                 if (reputacaoAtual != null) {
-                    BigDecimal score = (BigDecimal) reputacaoAtual[0]; // Score já calculado pelo repositório
+                    BigDecimal score = (BigDecimal) reputacaoAtual[0];
                     int totalBoletosCnpj = (int) reputacaoAtual[1];
                     int totalDenunciasCnpj = (int) reputacaoAtual[2]; // Assumindo que o índice 2 é total_suspeitas/denuncias
 
-                    // 3. Atribui os valores de reputação ao objeto Boleto
                     boleto.setScoreReputacaoCnpj(score);
                     boleto.setTotalBoletosCnpj(totalBoletosCnpj);
-                    boleto.setTotalDenunciasCnpj(totalDenunciasCnpj); // Define o total de denúncias/suspeitas
+                    boleto.setTotalDenunciasCnpj(totalDenunciasCnpj);
 
-                    // 4. Classifica a reputação do CNPJ para exibição
                     String classificacao;
                     if (totalBoletosCnpj < 5) {
                         classificacao = "Insuficiente";
@@ -283,57 +277,42 @@ public class ProcessadorLinhaGui {
                     } else if (score.compareTo(new BigDecimal("50.00")) >= 0) {
                         classificacao = "Risco Moderado";
                     } else if (score.compareTo(BigDecimal.ZERO) == 0 && totalDenunciasCnpj >= 3) {
-                        // Classificação "Reincidente" agora também considera 3+ denúncias para um score de 0
                         classificacao = "Reincidente";
-                    } else { // Score entre 0 (exclusive) e 50 (exclusive)
+                    } else {
                         classificacao = "Problemático";
                     }
-                    boleto.setClassificacaoReputacao(classificacao); // Armazena a classificação no Boleto
+                    boleto.setClassificacaoReputacao(classificacao);
 
-                    // 5. Marca o boleto como suspeito se a reputação for muito baixa e houver histórico suficiente
                     if ((classificacao.equals("Reincidente") || classificacao.equals("Problemático"))
-                            && totalDenunciasCnpj >= 5) { // Limite de 5 denúncias para marcar automaticamente como suspeito
+                            && totalDenunciasCnpj >= 5) {
                         boleto.setSuspeito(true);
-                        // Ajusta o status de validação do boleto se ele estava 'VALIDO_COMPLETO'
-                        // mas o CNPJ emitente agora é considerado suspeito por reputação.
                         if ("VALIDO_COMPLETO".equals(boleto.getStatusValidacao())) {
                             boleto.setStatusValidacao("ALERTA_GERAL_NAO_CONFORMIDADE");
                         }
                         boleto.addDetalheFalha("Alerta: Boleto de CNPJ classificado como '" + classificacao + "' e com "
                                 + totalDenunciasCnpj + " denúncias. Marcado como SUSPEITO!");
-                        // Não incrementa verificacoesComFalha aqui, pois já estamos tratando o status do boleto
-                        // com base no que veio da reputação.
                     }
 
                 } else {
                     boleto.addDetalheFalha("Alerta: Não foi possível buscar a reputação do CNPJ. Pode ser um novo CNPJ ou um erro na busca.");
                     System.err.println("Não foi possível buscar a reputação do CNPJ. Pode ser um novo CNPJ ou um erro na busca.");
                 }
-            } else {
-                boleto.addDetalheFalha("Alerta: Não foi possível calcular reputação: CNPJ Emitente não extraído ou vazio.");
-                System.err.println("Não foi possível calcular reputação: CNPJ Emitente não extraído ou vazio.");
+            } catch (SQLException e) {
+                boleto.addDetalheFalha("Falha: Erro ao processar reputação do CNPJ: " + e.getMessage());
+                System.err.println("Erro ao processar reputação do CNPJ: " + e.getMessage());
+                verificacoesComFalha++;
+                throw e;
             }
-        } catch (SQLException e) {
-            boleto.addDetalheFalha("Falha: Erro ao processar reputação do CNPJ: " + e.getMessage());
-            System.err.println("Erro ao processar reputação do CNPJ: " + e.getMessage());
-            verificacoesComFalha++; // Conta como falha se houver exceção de SQL
-            throw e; // Relança a exceção de SQL para tratamento da camada superior
+        } else {
+            // Este else só é atingido se o CNPJ já for inválido/ausente do if externo,
+            // garantindo que não se tenta processar a reputação para um CNPJ inválido.
+            // A mensagem de falha já foi adicionada no bloco anterior.
         }
 
         // Lógica da Denuncia (se ainda for necessária aqui, pode precisar de ajuste)
-        // Se a intenção é que Denuncia.validarTotalSuspeitas() use os dados do boleto,
-        // o boleto precisa ser passado para ela ou ela deve ter acesso ao RepositorioCnpjReputacao.
-        // Conforme está, ela não está diretamente ligando a esta instância de boleto.
         if (boleto.getCnpjEmitente() != null && !boleto.getCnpjEmitente().isEmpty()) {
             Denuncia denuncia = new Denuncia();
-            denuncia.validarTotalSuspeitas(); // Isso parece ser uma lógica para a Denuncia em si, não para o Boleto.
-        }
-
-        // Atualiza a tabela cnpj_emitente (se o CNPJ for válido)
-        if (boleto.getCnpjEmitente() != null && !boleto.getCnpjEmitente().isEmpty() &&
-            !("CNPJ_INVALIDO_FORMATO".equals(boleto.getStatusValidacaoCnpj()))) {
-            repositorioCnpjEmitente.inserirOuAtualizarCnpjEmitente(
-                boleto.getCnpjEmitente(), boleto.getRazaoSocialApi());
+            denuncia.validarTotalSuspeitas();
         }
 
         // Associa o boleto a um usuário anônimo antes de salvar
@@ -352,12 +331,12 @@ public class ProcessadorLinhaGui {
             } else {
                 System.err.println("Falha desconhecida ao salvar o boleto.");
                 boleto.addDetalheFalha("Erro: Falha desconhecida ao salvar o boleto no banco de dados.");
-                verificacoesComFalha++; // Conta como falha se não conseguir salvar
+                verificacoesComFalha++;
             }
         } catch (SQLException e) {
             System.err.println("Erro ao salvar boleto no banco de dados: " + e.getMessage());
             boleto.addDetalheFalha("Erro: Erro ao salvar boleto no banco de dados: " + e.getMessage());
-            verificacoesComFalha++; // Conta como falha se houver exceção
+            verificacoesComFalha++;
             throw e;
         }
 
